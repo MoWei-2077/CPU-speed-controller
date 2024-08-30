@@ -6,7 +6,7 @@
 3.该调度为ZTC内核专属调度
 
 #### 工作条件
-1.目前该调度适用于Android12-14<br>
+1.目前该调度适用于Android12-14 <br>
 2.内核5.10-5.15
 
 ## 安装
@@ -66,17 +66,16 @@ echo "powersave" > /sdcard/Android/MW_CpuSpeedController/log.txt
 ```
 在日志以如下方式体现：
 2024-08-11 11:22:37] 更换模式为省电模式
-```
 
 # 致谢 （排名不分前后）
 感谢以下用户对本项目的帮助：  
-- @XShe
-- @Timeline
+- @XShe 
+- @Timeline 
 - @长虹久奕
 - @RalseiNEO
 # 使用的开源项目
-[作者:wme7 项目:INIreader](https://github.com/wme7/INIreader) 
-[作者:MoWei 项目:负载智能升频](https://github.com/MoWei-2077/CS-load-up-conversion)
+[作者:wme7 项目:INIreader](https://github.com/wme7/INIreader) <br>
+[作者:MoWei 项目:负载智能升频](https://github.com/MoWei-2077/CS-load-up-conversion) <br>
 感谢所有用户的测试反馈 这将推进CPU调速器(CS调度)的开发
 
-该文档更新于:2024/8/30 9:35
+### 该文档更新于:2024/8/30 9:35
