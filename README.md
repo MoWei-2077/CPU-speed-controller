@@ -6,19 +6,19 @@
 3.该调度为ZTC内核专属调度
 
 #### 工作条件
-1.目前该调度适用于Android10-14<br>
+1.目前该调度适用于Android12-14<br>
 2.内核5.10-5.15
 
 ## 安装
 1.下载后通过Magisk Manager刷入，Magisk版本不低于20.4 <br>
-2.重启后查看/sdcard/Android/MW_CpuSpeedController/log.txt检查CT调度是否正常自启动
-
-### 性能模式切换
 #### 修改启动时的默认模式
 1.打开/sdcard/Android/MW_CpuSpeedController/config.txt <br>
 2.可选的挡位有 super_powersave powersave balance performance fast五个挡位 <br>
 super_powersave 超级省电模式 开启后将大幅度限制CPU频率 推荐待机使用 <br>
 powersave 省电模式 保证基本流畅的同时尽可能降低功耗 推荐日常使用 <br>
+2.重启后查看/sdcard/Android/MW_CpuSpeedController/log.txt检查CS调度是否正常自启动
+
+### 性能模式切换
 balance均衡模式，比原厂略流畅的同时略省电 推荐日常使用 <br>
 performance性能模式，保证费电的同时多一点流畅度 推荐游戏使用 <br>
 fast极速模式，默认开启Feas或官调
@@ -37,15 +37,15 @@ A：模块内脚本已经关闭了大部分的用户态和内核态升频，如�
 ### 自定义配置文件
 ### 元信息
 
-```json
-    "meta": {
-        "name": "CS调度通用模型",
-        "author": "CoolAPK@MoWei",
-        "Working_mode": "schedhorizon",
-        "Enable_Feas": false,
-        "Disable_qcom_GpuBoost": false,
-        "Core_allocation": false
-    },
+```ini
+   [meta]
+   name = "CS调度配置文件V2.0"
+   author = "CoolApk@MoWei"
+   Enable_Feas = false
+   Disable_qcom_GpuBoost = false
+   Core_allocation = false
+   APP_freq_uency_upgrade = false
+
 ```
 | 字段名   | 数据类型 | 描述                                           |
 | -------- | -------- | ---------------------------------------------- |
@@ -55,11 +55,6 @@ A：模块内脚本已经关闭了大部分的用户态和内核态升频，如�
 | Enable_Feas | bool   | 开启此功能后再开启极速模式就会恢复walt调速器等数据开启Feas |
 | Disable_qcom_GpuBoost | bool   | 开启后将会关闭高通的GPUBoost 防止GPUBoost乱升频 |
 | Core_allocation | bool   | 核心绑定 开启后将会调整CPUset |
-```
-`name`与 `author` `Working_mode`在日志以如下方式体现：  
-[2024-08-11 11:22:37] 配置名称: CS调度通用模型
-[2024-08-11 11:22:37] 配置文件作者: CoolAPK@MoWei
-[2024-08-11 11:22:37] 工作模式: schedhorizon
 ```
 
 在CS启动时会读取`switchInode`对应路径的文件获取默认性能模式,在日志以如下方式体现：  
@@ -79,6 +74,9 @@ echo "powersave" > /sdcard/Android/MW_CpuSpeedController/log.txt
 - @Timeline
 - @长虹久奕
 - @RalseiNEO
+# 使用的开源项目
+[作者:wme7 项目:INIreader](https://github.com/wme7/INIreader) 
+[作者:MoWei 项目:负载智能升频](https://github.com/MoWei-2077/CS-load-up-conversion)
 感谢所有用户的测试反馈 这将推进CPU调速器(CS调度)的开发
 
 该文档更新于:2024/8/24 16:01
