@@ -66,8 +66,8 @@ echo "powersave" > /sdcard/Android/MW_CpuSpeedController/log.txt
 ```
 在日志以如下方式体现：
 2024-08-11 11:22:37] 更换模式为省电模式
-``` 
-[13:06:
+```
+
 # 致谢 （排名不分前后）
 感谢以下用户对本项目的帮助：  
 - @XShe
@@ -79,4 +79,4 @@ echo "powersave" > /sdcard/Android/MW_CpuSpeedController/log.txt
 [作者:MoWei 项目:负载智能升频](https://github.com/MoWei-2077/CS-load-up-conversion)
 感谢所有用户的测试反馈 这将推进CPU调速器(CS调度)的开发
 
-该文档更新于:2024/8/24 16:01
+该文档更新于:2024/8/30 9:35
