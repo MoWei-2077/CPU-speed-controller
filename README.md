@@ -5,7 +5,7 @@
 [![AArch64](https://img.shields.io/badge/arch-AArch64-red.svg?style=plastic)](https://en.wikipedia.org/wiki/AArch64)
 
 #### 介绍
-1.该项目是基于C++进行编写一款智能CPU调度 <br>
+1.该项目是基于C++进行编写的一款智能CPU调度 <br>
 2.该调度是基于schedhorizon调速器进行调整 <br>
 3.该调度为ZTC内核专属调度
 
@@ -18,11 +18,10 @@
 #### 修改启动时的默认模式
 1.打开/sdcard/Android/MW_CpuSpeedController/config.txt <br>
 2.可选的挡位有 super_powersave powersave balance performance fast五个挡位 <br>
-super_powersave 超级省电模式 开启后将大幅度限制CPU频率 推荐待机使用 <br>
-powersave 省电模式 保证基本流畅的同时尽可能降低功耗 推荐日常使用 <br>
 2.重启后查看/sdcard/Android/MW_CpuSpeedController/log.txt检查CS调度是否正常自启动
 
 ### 性能模式切换
+powersave 省电模式 保证基本流畅的同时尽可能降低功耗 推荐日常使用 <br>
 balance均衡模式，比原厂略流畅的同时略省电 推荐日常使用 <br>
 performance性能模式，保证费电的同时多一点流畅度 推荐游戏使用 <br>
 fast极速模式，默认开启Feas或官调
