@@ -59,6 +59,7 @@ A：模块内脚本已经关闭了大部分的用户态和内核态升频，如�
 | Enable_Feas | bool   | 开启此功能后再开启极速模式就会恢复walt调速器等数据开启Feas |
 | Disable_qcom_GpuBoost | bool   | 开启后将会关闭高通的GPUBoost 防止GPUBoost乱升频 |
 | Core_allocation | bool   | 核心绑定 开启后将会调整CPUset |
+| APP_freq_uency_upgrade | bool   | 冷启动升频 |
 ```
 
 在CS启动时会读取`switchInode`对应路径的文件获取默认性能模式,在日志以如下方式体现：  
