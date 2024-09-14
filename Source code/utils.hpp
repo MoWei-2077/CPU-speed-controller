@@ -72,6 +72,17 @@ public:
         }
     }
 
+    bool checkconf() {
+        const std::string conf_path = "/sdcard/Android/MW_CpuSpeedController/config.ini";
+        return access(conf_path.c_str(), F_OK) == 0;
+    }
+    void Initconf() {
+        if (checkconf()) {
+           //
+        } else {
+            log("配置文件不存在，请重新刷入CS调度");
+        }
+    }
     bool checkschedhorizon() {
         const std::string schedhorizon_path = "/sys/devices/system/cpu/cpufreq/policy0/schedhorizon";
         return access(schedhorizon_path.c_str(), F_OK) == 0;
