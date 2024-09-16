@@ -2,7 +2,7 @@
 [![C++](https://img.shields.io/badge/language-C++-%23f34b7d.svg?style=plastic)](https://en.wikipedia.org/wiki/C++)
 [![Android](https://img.shields.io/badge/platform-Android-0078d7.svg?style=plastic)](https://en.wikipedia.org/wiki/Android_(operating_system)) 
 [![AArch64](https://img.shields.io/badge/arch-AArch64-red.svg?style=plastic)](https://en.wikipedia.org/wiki/AArch64)
-[![Android Support](https://img.shields.io/badge/Android%2012~14-Support-green)]
+[![Android Support12-14](https://img.shields.io/badge/Android%2012~14-Support-green)] (https://img.shields.io/badge/Android%2012~14-Support-green)
 #### 介绍
 1.该项目是基于C++进行编写的一款智能CPU调度 <br>
 2.该调度是基于schedhorizon调速器进行调整 <br>
@@ -87,4 +87,4 @@ echo "powersave" > /sdcard/Android/MW_CpuSpeedController/log.txt
 [作者:wme7 项目:INIreader](https://github.com/wme7/INIreader) <br>
 [作者:MoWei 项目:负载智能升频](https://github.com/MoWei-2077/CS-load-up-conversion) <br>
 感谢所有用户的测试反馈 这将推进CPU调速器(CS调度)的开发
-### 该文档更新于:2024/9/14 21:09
+### 该文档更新于:2024/9/16 20:38
