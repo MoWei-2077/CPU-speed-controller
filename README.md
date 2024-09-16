@@ -1,9 +1,11 @@
-# CPU调速器 （CS调度）
 
+<div align="center">
+<h1>CPU调速器 （CS调度）</h1>
 [![C++](https://img.shields.io/badge/language-C++-%23f34b7d.svg?style=plastic)](https://en.wikipedia.org/wiki/C++)
 [![Android](https://img.shields.io/badge/platform-Android-0078d7.svg?style=plastic)](https://en.wikipedia.org/wiki/Android_(operating_system)) 
 [![AArch64](https://img.shields.io/badge/arch-AArch64-red.svg?style=plastic)](https://en.wikipedia.org/wiki/AArch64)
-
+<img alt="Android Support" src="https://img.shields.io/badge/Android%2012~14-Support-green">
+</div>
 #### 介绍
 1.该项目是基于C++进行编写的一款智能CPU调度 <br>
 2.该调度是基于schedhorizon调速器进行调整 <br>
