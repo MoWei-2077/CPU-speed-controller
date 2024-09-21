@@ -11,7 +11,6 @@ private:
     bool coreAllocation;
     bool loadbalancing;
     bool DisableUFSclockgate;
-    bool refresh;
     Utils utils;
     Config config;
     INIReader reader;
@@ -42,24 +41,7 @@ public:
         coreAllocation = reader.GetBoolean("meta", "Core_allocation", false);
         loadbalancing = reader.GetBoolean("meta", "Load_balancing", false);
         DisableUFSclockgate = reader.GetBoolean("meta", "Disable_UFS_clock_gate", false);
-        refresh = reader.GetBoolean("meta", "Refresh", false);
     }
-    std::string readFile(const std::string& path) {
-    std::ifstream file(path);
-    std::string content((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
-    file.close();
-    return content;
-}
-
-std::string getProcessName(const std::string& statusContent) {
-    size_t start = statusContent.find("Name:\t");
-    if (start != std::string::npos) {
-        start += 6; 
-        size_t end = statusContent.find('\n', start);
-        return statusContent.substr(start, end - start);
-    }
-    return "";
-}
  
     void config_mode(){
         std::string line;
