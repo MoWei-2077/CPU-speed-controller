@@ -6,17 +6,17 @@ int main() {
     Utils utils;
     CS_Speed csspeed;
     Config config;
-
+    
+    utils.clear_log();// 先清理日志 否则无法正确抛出错误
     utils.Init();
-    utils.clear_log();
     utils.Initconf();
     csspeed.schedhorizon();
     utils.Initschedhorizon();
     csspeed.readAndParseConfig();
     csspeed.disable_qcomGpuBoost();
     csspeed.core_allocation();
-    csspeed.AppFrequencyUpgrade();
     csspeed.load_balancing();
+    csspeed.EAScheduler();
     csspeed.config_mode();
     file = config.Getconfig();
     csspeed.config_mode();
