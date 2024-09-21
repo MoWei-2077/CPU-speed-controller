@@ -16,7 +16,7 @@
 1.下载后通过Magisk Manager刷入，Magisk版本不低于20.4 <br>
 #### 修改启动时的默认模式
 1.打开/sdcard/Android/MW_CpuSpeedController/config.txt <br>
-2.可选的挡位有powersave balance performance fast五个挡位 <br>
+2.可选的挡位有powersave balance performance fast四个挡位 <br>
 2.重启后查看/sdcard/Android/MW_CpuSpeedController/log.txt检查CS调度是否正常自启动
 
 ### 性能模式切换
@@ -29,12 +29,12 @@ Q：是否对待机功耗有负面影响？<br>
 A：CS调度的实现做了不少低功耗的优化，得益于C++语言所以自身运行的功耗开销很低。 <br>
 Q：为什么使用了CS调度功耗还是好高？ <br>
 A：SOC的AP部分功耗主要取决于计算量以及使用的频点。CS调度只能控制性能释放，改进频率的方式从而降低功耗，如果后台APP的计算量很大是无法得到显著的续航延长的。这一问题可以通过Scene工具箱的进程管理器来定位。 <br>
-Q：是否还需要关闭系统的performance boost？ <br>
-A：模块默认不关闭用户态Boost,因为CS调度需要这些用户态Boost进行辅助升频,如果你不需要可安装其他关闭用户态Boost的模块搭配使用。 <br>
 Q: 为什么我的游戏大核负载异常？ <br>
 A: 开启负载均衡。 PS:旧版禁止反馈 <br>
 Q: 什么时候更新XXXX版本？ <br>
-A: 我就拿那个筷子加水泥XXXXXXX😋。
+A: 请将需要更新的内容,发送至我的邮箱,邮箱:mowei2077@gmail.com😋。
+Q: 是否需要调整EAS调度器？
+A: CS调度在8.0版本会自动调整EAS调度器的参数,无需用户自行调整。
 ## 详细介绍 
 该模块使用的调速器是schedhorizon performance<br>
 所以在部分场景中得益于schedhorizon调速器会比Powersave调速器拥有更快的响应速度、性能稳定性或资源利用率。适当的调度策略可以确保系统在不同负载下的表现良好 <br>
@@ -46,12 +46,11 @@ A: 我就拿那个筷子加水泥XXXXXXX😋。
 
 ```ini
    [meta]
-   name = "CS调度配置文件V2.0"
+   name = "CS调度配置文件V3.0"
    author = "CoolApk@MoWei"
    Enable_Feas = false
    Disable_qcom_GpuBoost = false
    Core_allocation = false
-   APP_freq_uency_upgrade = false
    Load_balancing = false
    Disable_UFS_clock_gate = false
 ```
@@ -63,7 +62,6 @@ A: 我就拿那个筷子加水泥XXXXXXX😋。
 | Enable_Feas | bool   | 开启此功能后再开启极速模式就会恢复walt调速器等数据开启Feas |
 | Disable_qcom_GpuBoost | bool   | 开启后将会关闭高通的GPUBoost 防止GPUBoost乱升频 |
 | Core_allocation | bool   | 核心绑定 开启后将会调整CPUset |
-| APP_freq_uency_upgrade | bool   | 开启后将监控应用切换进行冷启动升频 |
 | Load_balancing | bool   | 负载均衡 |
 | Disable_UFS_clock_gate | bool   | 开启后将在性能模式和极速模式关闭UFS时钟门 关闭后将会减少I/O 提高耗电和性能 PS:省电模式和均衡模式因为功耗影响默认开启UFS时钟门 |
 ```
@@ -79,12 +77,12 @@ echo "powersave" > /sdcard/Android/MW_CpuSpeedController/log.txt
 
 # 致谢 （排名不分前后）
 感谢以下用户对本项目的帮助：  
+- @ztc1997
 - @XShe 
 - @Timeline 
 - @长虹久奕
 - @RalseiNEO
 # 使用的开源项目
 [作者:wme7 项目:INIreader](https://github.com/wme7/INIreader) <br>
-[作者:MoWei 项目:负载智能升频](https://github.com/MoWei-2077/CS-load-up-conversion) <br>
 感谢所有用户的测试反馈 这将推进CPU调速器(CS调度)的开发
-### 该文档更新于:2024/9/16 20:38
+### 该文档更新于:2024/9/21 10:27
