@@ -77,12 +77,12 @@ echo "powersave" > /sdcard/Android/MW_CpuSpeedController/log.txt
 
 # 致谢 （排名不分前后）
 感谢以下用户对本项目的帮助：  
-- @ztc1997
-- @XShe 
-- @Timeline 
-- @长虹久奕
-- @RalseiNEO
+[CoolAPK@ztc1997 github链接](https://github.com/ztc1997) <br>
+[CoolAPK@XShe github链接](https://github.com/xsheeee) <br>
+[CoolAPK@Timeline github链接](https://github.com/nep-Timeline) <br>
+- QQ@长虹久奕
+- CoolAPK@RalseiNEO
 # 使用的开源项目
 [作者:wme7 项目:INIreader](https://github.com/wme7/INIreader) <br>
 感谢所有用户的测试反馈 这将推进CPU调速器(CS调度)的开发
-### 该文档更新于:2024/9/21 10:27
+### 该文档更新于:2024/9/21 10:51
