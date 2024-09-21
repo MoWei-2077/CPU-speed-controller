@@ -9,7 +9,6 @@ int main() {
     
     utils.clear_log();// 先清理日志 否则无法正确抛出错误
     utils.Init();
-    utils.Initconf();
     csspeed.schedhorizon();
     utils.Initschedhorizon();
     csspeed.readAndParseConfig();
@@ -17,8 +16,6 @@ int main() {
     csspeed.core_allocation();
     csspeed.load_balancing();
     csspeed.EAScheduler();
-    csspeed.config_mode();
-    file = config.Getconfig();
     csspeed.config_mode();
     while (true) {
             utils.InotifyMain("/sdcard/Android/MW_CpuSpeedController/config.txt", IN_MODIFY); // 检测配置文件变化

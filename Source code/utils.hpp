@@ -1,23 +1,16 @@
-#include <fstream>
 #include <iostream>
-#include <string>
-#include <algorithm>
+#include <fstream>
 #include <cstring>
-#include <ctime>
-#include <thread>
-#include <map>
 #include <sstream>
-#include <thread>
+#include <string>
+#include <ctime>
+#include <map>
 #include <stdio.h>
 #include <fcntl.h>
-#include <errno.h>
-#include <vector>
 #include <unistd.h>
 #include <stdlib.h>
 #include <sys/stat.h>
 #include <sys/types.h>
-#include <unordered_map>
-#include <filesystem>
 #include "INIreader.hpp"
 #include <sys/inotify.h>
 
@@ -26,8 +19,6 @@ private:
     const std::string logpath = "/sdcard/Android/MW_CpuSpeedController/log.txt";
 
 public:
-    const char* cpusetEventPath = "/dev/cpuset/top-app";
-    //CS_Speed csspeed;
     void clear_log() {
         std::ofstream ofs;
         ofs.open(logpath, std::ofstream::out | std::ofstream::trunc);
@@ -65,24 +56,13 @@ public:
 
         pclose(pipe);
 
-        if (count > 2) {
+        if (count > 1) {
             log("警告: CS调度已经在运行 pids: " + processName + " 当前进程(pid:%d)即将退出");
             log("警告: 请勿手动启动CS调度，也不要在多个框架同时启动CS调度");
             exit(1);
         }
     }
-
-    bool checkconf() {
-        const std::string conf_path = "/sdcard/Android/MW_CpuSpeedController/config.ini";
-        return access(conf_path.c_str(), F_OK) == 0;
-    }
-    void Initconf() {
-        if (checkconf()) {
-           //
-        } else {
-            log("配置文件不存在，请重新刷入CS调度");
-        }
-    }
+    
     bool checkschedhorizon() {
         const std::string schedhorizon_path = "/sys/devices/system/cpu/cpufreq/policy0/schedhorizon";
         return access(schedhorizon_path.c_str(), F_OK) == 0;

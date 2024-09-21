@@ -15,10 +15,6 @@ private:
     Config config;
     INIReader reader;
     const std::string schedhorizon_path = "/sys/devices/system/cpu/cpufreq/policy0/schedhorizon/";
-    const std::string cpu_uclamp_min = "/dev/cpuctl/top-app/cpu.uclamp.min";
-    const std::string cpu_uclamp_max = "/dev/cpuctl/top-app/cpu.uclamp.max";
-    const std::string foreground_cpu_uclamp_min = "/dev/cpuctl/foreground/cpu.uclamp.min";
-    const std::string foreground_cpu_uclamp_max = "/dev/cpuctl/foreground/cpu.uclamp.max";
     const std::string background_cpu = "/dev/cpuset/background/cpus"; // 用户的后台应用
     const std::string system_background_cpu = "/dev/cpuset/system-background/cpus"; // 系统的后台应用
     const std::string foreground_cpu = "/dev/cpuset/foreground/cpus"; // 前台的应用
@@ -30,8 +26,8 @@ public:
          reader("/sdcard/Android/MW_CpuSpeedController/config.ini");
 
         if (reader.ParseError() < 0) {
-            std::cout << "Can't load 'config.ini'\n";
-            return;
+            utils.log("警告:请检查您的配置文件是否存在");
+            exit(0);
         }
 
         name = reader.Get("meta", "name", "");
@@ -71,7 +67,7 @@ public:
 
         if (fd >= 0) {
             write(fd, content.data(), content.size());
-            close(fd); // 写入成功后关闭文件 防止调速器恢复授予0444权限
+            close(fd); // 写入成功后关闭文件 授予0444权限
             chmod(filePath.c_str(), 0444);
         }
     }
@@ -100,8 +96,8 @@ public:
         if (checkEAScheduler()){
             const std::string EAS_Path = "/proc/sys/kernel/";
             WriteFile(EAS_Path + "sched_min_granularity_ns", "2000000"); // EAS 调度器中的最小调度粒度 调度器将任务划分为较小的时间片段进行调度 单位NS
-            WriteFile(EAS_Path + "sched_nr_migrate", "30");  // 用于控制任务在多个 CPU 核心之间迁移的次数
-            WriteFile(EAS_Path + "sched_wakeup_granularity_ns", "3000000"); // EAS 调度器可能会根据能效考虑来调整任务的唤醒时间 单位NS
+            WriteFile(EAS_Path + "sched_nr_migrate", "28");  // 用于控制任务在多个 CPU 核心之间迁移的次数 均衡负载
+            WriteFile(EAS_Path + "sched_wakeup_granularity_ns", "3500000"); // EAS 调度器可能会根据能效考虑来调整任务的唤醒时间 单位NS 
             WriteFile(EAS_Path + "sched_schedstats", "0"); // 禁用调度统计信息收集
             WriteFile(EAS_Path + "sched_energy_aware", "1"); // 启用EAS调度器
             utils.log("EAS调度器已启用 参数已调整完毕");
@@ -126,11 +122,9 @@ public:
    
     void Feasdisable() { // Feas可能会导致日常卡顿 所以在日常中需要进行关闭Feas
         if (checkqcomFeas()) {
-            utils.log("Feas已关闭"); 
             WriteFile("/sys/module/perfmgr/parameters/perfmgr_enable", "0");
         }
         else if (checkMTKFeas()) {
-            utils.log("Feas已关闭");
             WriteFile("/sys/module/mtk_fpsgo/parameters/perfmgr_enable", "0");
         } 
     }
@@ -312,7 +306,7 @@ public:
             Performance(); //Feas不基于任何调速器 他只负责进行调频
             EnableFeas();
         }else{
-            utils.log("极速模式已切换 将更换Performance调速器 开启官调");
+            utils.log("极速模式已切换 将更换Performance调速器 CS调度将不会接管CPU频率等 将由EAS调度器提供接管");
             Performance();
         }
     }
