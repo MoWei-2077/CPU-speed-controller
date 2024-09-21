@@ -5,8 +5,8 @@
 [![Android Support12-14](https://img.shields.io/badge/Android%2012~14-Support-green)](https://img.shields.io/badge/Android%2012~14-Support-green)
 #### 介绍
 1.该项目是基于C++进行编写的一款智能CPU调度 <br>
-2.该调度是基于schedhorizon调速器进行调整 <br>
-3.该调度为ZTC内核专属调度
+2.该调度依赖于schedhorizon调速器和EAS调度器 <br>
+3.该调度为ZTC内核专属调度 当然别的内核也能用 但效果不如ztc内核
 
 #### 工作条件
 1.目前该调度适用于Android12-14 <br>
@@ -77,12 +77,12 @@ echo "powersave" > /sdcard/Android/MW_CpuSpeedController/log.txt
 
 # 致谢 （排名不分前后）
 感谢以下用户对本项目的帮助：  
-- [CoolAPK@ztc1997 跳转github链接](https://github.com/ztc1997) <br>
-- [CoolAPK@XShe 跳转github链接](https://github.com/xsheeee) <br>
-- [CoolAPK@Timeline 跳转github链接](https://github.com/nep-Timeline) <br>
+- [CoolAPK@ztc1997](https://github.com/ztc1997) <br>
+- [CoolAPK@XShe](https://github.com/xsheeee) <br>
+- [CoolAPK@Timeline](https://github.com/nep-Timeline) <br>
 - QQ@长虹久奕
 - CoolAPK@RalseiNEO
 # 使用的开源项目
 [作者:wme7 项目:INIreader](https://github.com/wme7/INIreader) <br>
 感谢所有用户的测试反馈 这将推进CPU调速器(CS调度)的开发
-### 该文档更新于:2024/9/21 10:51
+### 该文档更新于:2024/9/21 20:57
