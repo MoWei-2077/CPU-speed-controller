@@ -15,10 +15,12 @@ private:
     Config config;
     INIReader reader;
     const std::string schedhorizon_path = "/sys/devices/system/cpu/cpufreq/policy0/schedhorizon/";
-    const std::string background_cpu = "/dev/cpuset/background/cpus"; // 用户的后台应用
-    const std::string system_background_cpu = "/dev/cpuset/system-background/cpus"; // 系统的后台应用
-    const std::string foreground_cpu = "/dev/cpuset/foreground/cpus"; // 前台的应用
-    const std::string top_app = "/dev/cpuset/top-app/cpus"; // 顶层应用
+    const std::string background_cpuset = "/dev/cpuset/background/cpus"; // 用户的后台应用
+    const std::string system_background_cpuset = "/dev/cpuset/system-background/cpus"; // 系统的后台应用
+    const std::string foreground_cpuset = "/dev/cpuset/foreground/cpus"; // 前台的应用
+    const std::string top_app_cpuset = "/dev/cpuset/top-app/cpus"; // 顶层应用
+    const std::string top_app_cpuctl = "/dev/cpuctl/top-app/";
+    const std::string foreground_cpuctl = "/dev/cpuctl/foreground/";
 public:
     CS_Speed() : reader("/sdcard/Android/MW_CpuSpeedController/config.ini") {}
     void readAndParseConfig() {
@@ -38,7 +40,13 @@ public:
         loadbalancing = reader.GetBoolean("meta", "Load_balancing", false);
         DisableUFSclockgate = reader.GetBoolean("meta", "Disable_UFS_clock_gate", false);
     }
- 
+    void Appboost(){
+         WriteFile(top_app_cpuset, "4-7"); // 顶层核心 不使用小核
+         WriteFile(top_app_cpuctl + "cpu.uclamp.min", "40"); // 顶层最小CPU使用率
+         WriteFile(top_app_cpuctl + "cpu.uclamp.max", "max");
+         WriteFile(foreground_cpuctl + "cpu.uclamp.min", "0");// 限制非顶层的前台应用
+         WriteFile(foreground_cpuctl + "cpu.uclamp.max", "70");
+    }
     void config_mode(){
         std::string line;
         std::ifstream file = config.Getconfig();
@@ -71,17 +79,15 @@ public:
             chmod(filePath.c_str(), 0444);
         }
     }
-    void Performance(){
+    void schedutil(){
          for (int i = 0; i <= 7; ++i) {
             std::string cpuDir = "/sys/devices/system/cpu/cpufreq/policy" + std::to_string(i) + "/scaling_governor";
-            WriteFile(cpuDir, "performance");
+            WriteFile(cpuDir, "schedutil");
         }
-      WriteFile("/dev/cpuctl/top-app/cpu.uclamp.min", "0");
-      WriteFile("/dev/cpuctl/top-app/cpu.uclamp.max", "max");
-      WriteFile("/dev/cpuctl/foreground/cpu.uclamp.min", "10");
-      WriteFile("/dev/cpuctl/foreground/cpu.uclamp.max", "80");
-      WriteFile("/dev/cpuctl/foreground/cpu.uclamp.min", "10");
-      WriteFile("/dev/cpuctl/foreground/cpu.uclamp.max", "30"); 
+      WriteFile(top_app_cpuctl + "cpu.uclamp.min", "0");
+      WriteFile(top_app_cpuctl + "cpu.uclamp.max", "max");
+      WriteFile(foreground_cpuctl + "cpu.uclamp.min", "10");
+      WriteFile(foreground_cpuctl + "cpu.uclamp.max", "80");
         if (DisableUFSclockgate){
             WriteFile("/sys/devices/platform/soc/1d84000.ufshc/clkgate_enable", "0"); 
             }else{
@@ -96,8 +102,8 @@ public:
         if (checkEAScheduler()){
             const std::string EAS_Path = "/proc/sys/kernel/";
             WriteFile(EAS_Path + "sched_min_granularity_ns", "2000000"); // EAS 调度器中的最小调度粒度 调度器将任务划分为较小的时间片段进行调度 单位NS
-            WriteFile(EAS_Path + "sched_nr_migrate", "28");  // 用于控制任务在多个 CPU 核心之间迁移的次数 均衡负载
-            WriteFile(EAS_Path + "sched_wakeup_granularity_ns", "3500000"); // EAS 调度器可能会根据能效考虑来调整任务的唤醒时间 单位NS 
+            WriteFile(EAS_Path + "sched_nr_migrate", "30");  // 用于控制任务在多个 CPU 核心之间迁移的次数
+            WriteFile(EAS_Path + "sched_wakeup_granularity_ns", "3000000"); // EAS 调度器可能会根据能效考虑来调整任务的唤醒时间 单位NS
             WriteFile(EAS_Path + "sched_schedstats", "0"); // 禁用调度统计信息收集
             WriteFile(EAS_Path + "sched_energy_aware", "1"); // 启用EAS调度器
             utils.log("EAS调度器已启用 参数已调整完毕");
@@ -183,12 +189,10 @@ public:
             WriteFile(down_rate_limit_us_path6_7, "500");
             WriteFile(up_rate_limit_us_path6_7, "3000");
         }
-      WriteFile("/dev/cpuctl/top-app/cpu.uclamp.min", "0");
-      WriteFile("/dev/cpuctl/top-app/cpu.uclamp.max", "80");
-      WriteFile("/dev/cpuctl/foreground/cpu.uclamp.min", "0");
-      WriteFile("/dev/cpuctl/foreground/cpu.uclamp.max", "70");
-      WriteFile("/dev/cpuctl/foreground/cpu.uclamp.min", "0");
-      WriteFile("/dev/cpuctl/foreground/cpu.uclamp.max", "30");
+      WriteFile(top_app_cpuctl + "cpu.uclamp.min", "0");
+      WriteFile(top_app_cpuctl + "cpu.uclamp.max", "80");
+      WriteFile(foreground_cpuctl + "cpu.uclamp.min", "0");
+      WriteFile(foreground_cpuctl + "cpu.uclamp.max", "60");
       WriteFile("/sys/devices/platform/soc/1d84000.ufshc/clkgate_enable", "1"); 
       Feasdisable();
     }
@@ -235,12 +239,10 @@ public:
             WriteFile(down_rate_limit_us_path6_7, "1500");
             WriteFile(up_rate_limit_us_path6_7, "1000");
         }
-      WriteFile("/dev/cpuctl/top-app/cpu.uclamp.min", "10");
-      WriteFile("/dev/cpuctl/top-app/cpu.uclamp.max", "max");
-      WriteFile("/dev/cpuctl/foreground/cpu.uclamp.min", "0");
-      WriteFile("/dev/cpuctl/foreground/cpu.uclamp.max", "80");
-      WriteFile("/dev/cpuctl/foreground/cpu.uclamp.min", "0");
-      WriteFile("/dev/cpuctl/foreground/cpu.uclamp.max", "30"); 
+      WriteFile(top_app_cpuctl + "cpu.uclamp.min", "10");
+      WriteFile(top_app_cpuctl + "cpu.uclamp.max", "max");
+      WriteFile(foreground_cpuctl + "cpu.uclamp.min", "0");
+      WriteFile(foreground_cpuctl + "cpu.uclamp.max", "80");
       WriteFile("/sys/devices/platform/soc/1d84000.ufshc/clkgate_enable", "1"); 
       Feasdisable();
     }
@@ -287,12 +289,10 @@ public:
             WriteFile(down_rate_limit_us_path6_7, "1000");
             WriteFile(up_rate_limit_us_path6_7, "800");
         }
-      WriteFile("/dev/cpuctl/top-app/cpu.uclamp.min", "10");
-      WriteFile("/dev/cpuctl/top-app/cpu.uclamp.max", "max");
-      WriteFile("/dev/cpuctl/foreground/cpu.uclamp.min", "10");
-      WriteFile("/dev/cpuctl/foreground/cpu.uclamp.max", "80");
-      WriteFile("/dev/cpuctl/foreground/cpu.uclamp.min", "0");
-      WriteFile("/dev/cpuctl/foreground/cpu.uclamp.max", "30"); 
+      WriteFile(top_app_cpuctl + "cpu.uclamp.min", "10");
+      WriteFile(top_app_cpuctl + "cpu.uclamp.max", "max");
+      WriteFile(foreground_cpuctl + "cpu.uclamp.min", "10");
+      WriteFile(foreground_cpuctl + "cpu.uclamp.max", "80"); 
       Feasdisable();
         if (DisableUFSclockgate){
             WriteFile("/sys/devices/platform/soc/1d84000.ufshc/clkgate_enable", "0"); 
@@ -303,21 +303,21 @@ public:
 
     void fast() {
         if (enableFeas) {
-            Performance(); //Feas不基于任何调速器 他只负责进行调频
+            schedutil(); //Feas不基于任何调速器 他只负责进行调频
             EnableFeas();
         }else{
-            utils.log("极速模式已切换 将更换Performance调速器 CS调度将不会接管CPU频率等 将由EAS调度器提供接管");
-            Performance();
+            utils.log("极速模式已切换 将更换schedutil调速器 CS调度将不会接管CPU频率等 将由EAS调度器提供接管");
+            schedutil();
         }
     }
-
+      
     void core_allocation() {
         if (coreAllocation) {
             utils.log("已开启核心绑定");
-            WriteFile(background_cpu, "0-1");
-            WriteFile(system_background_cpu, "0-2");
-            WriteFile(foreground_cpu, "0-7");
-            WriteFile(top_app, "0-7");
+            WriteFile(background_cpuset, "0-2");
+            WriteFile(system_background_cpuset, "0-3");
+            WriteFile(foreground_cpuset, "0-7");
+            WriteFile(top_app_cpuset, "0-7");
         }
     }
     void load_balancing() {
