@@ -24,6 +24,7 @@ private:
     const std::string foreground_cpuctl = "/dev/cpuctl/foreground/";
     const std::string top_app_latency_sensitive = "/dev/cpuctl/top-app/cpu.uclamp.latency_sensitive";
     const std::string foreground_latency_sensitive = "/dev/cpuctl/foreground/cpu.uclamp.latency_sensitive";
+    const std::string Touch_Boost_path = "/proc/sys/walt/input_boost/sched_boost_on_input";
 public:
     CS_Speed() : reader("/sdcard/Android/MW_CpuSpeedController/config.ini") {}
     void readAndParseConfig() {
@@ -44,9 +45,16 @@ public:
         DisableUFSclockgate = reader.GetBoolean("meta", "Disable_UFS_clock_gate", false);
         TouchBoost = reader.GetBoolean("meta", "Touch_Boost", false);
     }
+    bool checkTouchBoost_path(){
+        return access(Touch_Boost_path.c_str(), F_OK) == 0;
+    }
     void Touchboost(){
         if (TouchBoost){
-            WriteFile("/dev/cpuctl/top-app/cpu.uclamp.latency_sensitive", "1"); // enable Touch Boost
+            if(checkTouchBoost_path()){
+                WriteFile(Touch_Boost_path, "1"); // enable Touch Boost
+            }else{
+                utils.log("警告:您的设备不支持触摸升频");
+            }
         }
     }
        
@@ -142,14 +150,14 @@ public:
     }
     void EnableFeas() {
         if (checkqcomFeas()) {
-            utils.log("Feas已启用"); // Feas已启用
+            utils.log("高通设备:Feas已启用"); // Feas已启用
             WriteFile("/sys/module/perfmgr/parameters/perfmgr_enable", "1");
         }
         else if (checkMTKFeas()) {
-            utils.log("Feas已启用");
+            utils.log("联发科设备:Feas已启用");
             WriteFile("/sys/module/mtk_fpsgo/parameters/perfmgr_enable", "1");
         }else{
-            utils.log("警告:您的设备不支持Feas 请检查您设备是否拥有Perfmgr模块 由于您的设备没有Perfmgr模块目前将不会调整任何模式请更换模式");        
+            utils.log("警告:您的设备不支持Feas 请检查您设备是否拥有Perfmgr模块或没有开启FPSGO 模块目前将不会调整任何模式请更换模式");        
         }
     }
     void powersave() {
