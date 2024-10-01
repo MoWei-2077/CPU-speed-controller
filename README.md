@@ -10,7 +10,7 @@
 
 #### 工作条件
 1.目前该调度适用于Android12-14 <br>
-2.内核5.10-5.15
+2.内核要求:5.10-5.15的GKI内核 PS:不推荐潘多拉和魔理沙内核进行配合使用
 
 ## 安装
 1.下载后通过Magisk Manager刷入，Magisk版本不低于20.4 <br>
@@ -24,6 +24,7 @@ powersave 省电模式 保证基本流畅的同时尽可能降低功耗 推荐�
 balance均衡模式，比原厂略流畅的同时略省电 推荐日常使用 <br>
 performance性能模式，保证费电的同时多一点流畅度 推荐游戏使用 <br>
 fast极速模式，默认开启Feas或官调
+
 ## 常见问题
 Q：是否对待机功耗有负面影响？<br>
 A：CS调度的实现做了不少低功耗的优化，得益于C++语言所以自身运行的功耗开销很低。 <br>
@@ -40,7 +41,7 @@ A: CS调度在9.1版本中锁定了DDR LLCC L3 DDRQOS值为9999000000,所以无�
 ## 详细介绍 
 该模块使用的调速器是schedhorizon performance<br>
 所以在部分场景中得益于schedhorizon调速器会比Powersave调速器拥有更快的响应速度、性能稳定性或资源利用率。适当的调度策略可以确保系统在不同负载下的表现良好 <br>
-在游戏场景中开启performance调速器 通过电量换取更强劲的性能和帧数 <br>
+在游戏场景中开启schedutil调速器 平衡功耗的同时保证流畅 <br>
 废话不多说进入本篇的重点 配置文档
 
 ### 自定义配置文件
@@ -62,7 +63,7 @@ A: CS调度在9.1版本中锁定了DDR LLCC L3 DDRQOS值为9999000000,所以无�
 | name     | string   | 配置文件的名称和版本                                 |
 | author   | string   | 配置文件的作者信息                             |
 | Working_mode | string   | CS调度的工作调速器，目前该字段不起任何作用 |
-| Enable_Feas | bool   | 开启此功能后再开启极速模式就会恢复walt调速器等数据开启Feas |
+| Enable_Feas | bool   | 开启此功能后再开启极速模式就会恢复schedutil调速器再开启Feas |
 | Disable_qcom_GpuBoost | bool   | 开启后将会关闭高通的GPUBoost 防止GPUBoost乱升频 |
 | Core_allocation | bool   | 核心绑定 开启后将会调整应用的CPUSET与绑定线程的CPUSET不产生冲突 例如:A-SOUL和Scene的核心绑定 |
 | Load_balancing | bool   | 负载均衡 |
