@@ -11,6 +11,7 @@ private:
     bool coreAllocation;
     bool loadbalancing;
     bool DisableUFSclockgate;
+    bool TouchBoost;
     Utils utils;
     Config config;
     INIReader reader;
@@ -21,6 +22,8 @@ private:
     const std::string top_app_cpuset = "/dev/cpuset/top-app/cpus"; // 顶层应用
     const std::string top_app_cpuctl = "/dev/cpuctl/top-app/";
     const std::string foreground_cpuctl = "/dev/cpuctl/foreground/";
+    const std::string top_app_latency_sensitive = "/dev/cpuctl/top-app/cpu.uclamp.latency_sensitive";
+    const std::string foreground_latency_sensitive = "/dev/cpuctl/foreground/cpu.uclamp.latency_sensitive";
 public:
     CS_Speed() : reader("/sdcard/Android/MW_CpuSpeedController/config.ini") {}
     void readAndParseConfig() {
@@ -39,14 +42,14 @@ public:
         coreAllocation = reader.GetBoolean("meta", "Core_allocation", false);
         loadbalancing = reader.GetBoolean("meta", "Load_balancing", false);
         DisableUFSclockgate = reader.GetBoolean("meta", "Disable_UFS_clock_gate", false);
+        TouchBoost = reader.GetBoolean("meta", "Touch_Boost", false);
     }
-    void Appboost(){
-         WriteFile(top_app_cpuset, "4-7"); // 顶层核心 不使用小核
-         WriteFile(top_app_cpuctl + "cpu.uclamp.min", "40"); // 顶层最小CPU使用率
-         WriteFile(top_app_cpuctl + "cpu.uclamp.max", "max");
-         WriteFile(foreground_cpuctl + "cpu.uclamp.min", "0");// 限制非顶层的前台应用
-         WriteFile(foreground_cpuctl + "cpu.uclamp.max", "70");
+    void Touchboost(){
+        if (TouchBoost){
+            WriteFile("/dev/cpuctl/top-app/cpu.uclamp.latency_sensitive", "1"); // enable Touch Boost
+        }
     }
+       
     void config_mode(){
         std::string line;
         std::ifstream file = config.Getconfig();
@@ -65,6 +68,7 @@ public:
             }
         }
     }
+    
     void WriteFile(const std::string& filePath, const std::string& content) noexcept {
         int fd = open(filePath.c_str(), O_WRONLY | O_NONBLOCK);
 
@@ -86,8 +90,10 @@ public:
         }
       WriteFile(top_app_cpuctl + "cpu.uclamp.min", "0");
       WriteFile(top_app_cpuctl + "cpu.uclamp.max", "max");
-      WriteFile(foreground_cpuctl + "cpu.uclamp.min", "10");
+      WriteFile(foreground_cpuctl + "cpu.uclamp.min", "0");
       WriteFile(foreground_cpuctl + "cpu.uclamp.max", "80");
+      WriteFile(top_app_latency_sensitive, "1"); 
+      WriteFile(foreground_latency_sensitive, "0");
         if (DisableUFSclockgate){
             WriteFile("/sys/devices/platform/soc/1d84000.ufshc/clkgate_enable", "0"); 
             }else{
@@ -193,6 +199,8 @@ public:
       WriteFile(top_app_cpuctl + "cpu.uclamp.max", "80");
       WriteFile(foreground_cpuctl + "cpu.uclamp.min", "0");
       WriteFile(foreground_cpuctl + "cpu.uclamp.max", "60");
+      WriteFile(top_app_latency_sensitive, "0"); 
+      WriteFile(foreground_latency_sensitive, "0");
       WriteFile("/sys/devices/platform/soc/1d84000.ufshc/clkgate_enable", "1"); 
       Feasdisable();
     }
@@ -239,10 +247,12 @@ public:
             WriteFile(down_rate_limit_us_path6_7, "1500");
             WriteFile(up_rate_limit_us_path6_7, "1000");
         }
-      WriteFile(top_app_cpuctl + "cpu.uclamp.min", "10");
+      WriteFile(top_app_cpuctl + "cpu.uclamp.min", "0");
       WriteFile(top_app_cpuctl + "cpu.uclamp.max", "max");
       WriteFile(foreground_cpuctl + "cpu.uclamp.min", "0");
       WriteFile(foreground_cpuctl + "cpu.uclamp.max", "80");
+      WriteFile(top_app_latency_sensitive, "1");
+      WriteFile(foreground_latency_sensitive, "0");
       WriteFile("/sys/devices/platform/soc/1d84000.ufshc/clkgate_enable", "1"); 
       Feasdisable();
     }
@@ -289,10 +299,12 @@ public:
             WriteFile(down_rate_limit_us_path6_7, "1000");
             WriteFile(up_rate_limit_us_path6_7, "800");
         }
-      WriteFile(top_app_cpuctl + "cpu.uclamp.min", "10");
+      WriteFile(top_app_cpuctl + "cpu.uclamp.min", "0");
       WriteFile(top_app_cpuctl + "cpu.uclamp.max", "max");
-      WriteFile(foreground_cpuctl + "cpu.uclamp.min", "10");
+      WriteFile(foreground_cpuctl + "cpu.uclamp.min", "0");
       WriteFile(foreground_cpuctl + "cpu.uclamp.max", "80"); 
+      WriteFile(top_app_latency_sensitive, "1"); 
+      WriteFile(foreground_latency_sensitive, "0");
       Feasdisable();
         if (DisableUFSclockgate){
             WriteFile("/sys/devices/platform/soc/1d84000.ufshc/clkgate_enable", "0"); 
@@ -320,14 +332,18 @@ public:
             WriteFile(top_app_cpuset, "0-7");
         }
     }
+    
     void load_balancing() {
         if (loadbalancing) {
             utils.log("已开启负载均衡优化");
             WriteFile("/dev/cpuset/sched_relax_domain_level", "1");
             WriteFile("/dev/cpuset/system-background/sched_relax_domain_level", "1");
+            WriteFile("/proc/sys/walt/sched_force_lb_enable", "1");
             WriteFile("/dev/cpuset/background/sched_relax_domain_level", "1");
             WriteFile("/dev/cpuset/foreground/sched_relax_domain_level", "1");
             WriteFile("/dev/cpuset/top-app/sched_relax_domain_level", "1");
+        } else {
+            WriteFile("/proc/sys/walt/sched_force_lb_enable", "0"); // 经研究部分机型会默认开启该功能 开启后将会均衡负载但耗电量提高
         }
     }
 
