@@ -34,7 +34,9 @@ A: 开启负载均衡。 PS:旧版禁止反馈 <br>
 Q: 什么时候更新XXXX版本？ <br>
 A: 请将需要更新的内容,发送至我的邮箱,邮箱:mowei2077@gmail.com😋。 <br>
 Q: 是否需要调整EAS调度器？ <br>
-A: CS调度在8.0版本会自动调整EAS调度器的参数,无需用户自行调整。
+A: CS调度在8.0版本会自动调整EAS调度器的参数,无需用户自行调整。 <br>
+Q: 是否需要调整DDR LLCC L3 DDRQOS？ <br>
+A: CS调度在9.1版本中锁定了DDR LLCC L3 DDRQOS值为9999000000,所以无需用户自行调整。 <br>
 ## 详细介绍 
 该模块使用的调速器是schedhorizon performance<br>
 所以在部分场景中得益于schedhorizon调速器会比Powersave调速器拥有更快的响应速度、性能稳定性或资源利用率。适当的调度策略可以确保系统在不同负载下的表现良好 <br>
@@ -53,6 +55,7 @@ A: CS调度在8.0版本会自动调整EAS调度器的参数,无需用户自行�
    Core_allocation = false
    Load_balancing = false
    Disable_UFS_clock_gate = false
+   TouchBoost = false
 ```
 | 字段名   | 数据类型 | 描述                                           |
 | -------- | -------- | ---------------------------------------------- |
@@ -61,9 +64,10 @@ A: CS调度在8.0版本会自动调整EAS调度器的参数,无需用户自行�
 | Working_mode | string   | CS调度的工作调速器，目前该字段不起任何作用 |
 | Enable_Feas | bool   | 开启此功能后再开启极速模式就会恢复walt调速器等数据开启Feas |
 | Disable_qcom_GpuBoost | bool   | 开启后将会关闭高通的GPUBoost 防止GPUBoost乱升频 |
-| Core_allocation | bool   | 核心绑定 开启后将会调整CPUset |
+| Core_allocation | bool   | 核心绑定 开启后将会调整应用的CPUSET与绑定线程的CPUSET不产生冲突 例如:A-SOUL和Scene的核心绑定 |
 | Load_balancing | bool   | 负载均衡 |
-| Disable_UFS_clock_gate | bool   | 开启后将在性能模式和极速模式关闭UFS时钟门 关闭后将会减少I/O 提高耗电和性能 PS:省电模式和均衡模式因为功耗影响默认开启UFS时钟门 |
+| Disable_UFS_clock_gate | bool   | 开启后将在性能模式和极速模式关闭UFS时钟门 关闭后将会减少I/O资源消耗 提高耗电和性能 PS:省电模式和均衡模式因为功耗影响默认开启UFS时钟门 |
+| TouchBoost | bool   | 开启后将启用内核的触摸升频 |
 ```
 在CS启动时会读取`switchInode`对应路径的文件获取默认性能模式,在日志以如下方式体现：  
 2024-08-11 11:22:37] 更换模式为性能模式
@@ -85,4 +89,4 @@ echo "powersave" > /sdcard/Android/MW_CpuSpeedController/log.txt
 # 使用的开源项目
 [作者:wme7 项目:INIreader](https://github.com/wme7/INIreader) <br>
 感谢所有用户的测试反馈 这将推进CPU调速器(CS调度)的开发
-### 该文档更新于:2024/9/21 20:57
+### 该文档更新于:2024/10/01 19:16
