@@ -4,8 +4,6 @@
 
 class CS_Speed {
 private:
-    std::string name;
-    std::string author;
     bool enableFeas;
     bool disableGpuBoost;
     bool coreAllocation;
@@ -36,8 +34,6 @@ public:
             exit(0);
         }
 
-        name = reader.Get("meta", "name", "");
-        author = reader.Get("meta", "author", "");
         enableFeas = reader.GetBoolean("meta", "Enable_Feas", false);
         disableGpuBoost = reader.GetBoolean("meta", "Disable_qcom_GpuBoost", false);
         coreAllocation = reader.GetBoolean("meta", "Core_allocation", false);
@@ -166,9 +162,9 @@ public:
 
         WriteFile(schedhorizon_path + "efficient_freq", "1700000");
         WriteFile(schedhorizon_path + "up_delay", "60");
-        WriteFile(schedhorizon_path + "scaling_min_freq_limit", "900000");
-        WriteFile(schedhorizon_path + "down_rate_limit_us", "500");
-        WriteFile(schedhorizon_path + "up_rate_limit_us", "3000");
+        WriteFile(schedhorizon_path + "scaling_min_freq_limit", "1000000");
+        WriteFile(schedhorizon_path + "down_rate_limit_us", "200");
+        WriteFile(schedhorizon_path + "up_rate_limit_us", "5000");
 
         /*
           当系统试图将 CPU 核心的频率设置得比 scaling_min_freq_limit 更低时，
@@ -185,8 +181,8 @@ public:
             WriteFile(filePath, frequencies);
             WriteFile(up_delayPath, efficient_freq); 
             WriteFile(scaling_min_freq_limit_path, "900000");
-            WriteFile(down_rate_limit_us_path, "500");
-            WriteFile(up_rate_limit_us_path, "3000");
+            WriteFile(down_rate_limit_us_path, "200");
+            WriteFile(up_rate_limit_us_path, "5000");
         }
 
         const std::string frequencies6_7 = "1200000 1800000 2500000";
@@ -200,14 +196,14 @@ public:
             WriteFile(filePath6_7, frequencies6_7);
             WriteFile(up_delayPath6_7, efficient_freq6_7);
             WriteFile(scaling_min_freq_limit_path6_7, "900000");
-            WriteFile(down_rate_limit_us_path6_7, "500");
-            WriteFile(up_rate_limit_us_path6_7, "3000");
+            WriteFile(down_rate_limit_us_path6_7, "200");
+            WriteFile(up_rate_limit_us_path6_7, "5000");
         }
       WriteFile(top_app_cpuctl + "cpu.uclamp.min", "0");
       WriteFile(top_app_cpuctl + "cpu.uclamp.max", "80");
       WriteFile(foreground_cpuctl + "cpu.uclamp.min", "0");
-      WriteFile(foreground_cpuctl + "cpu.uclamp.max", "60");
-      WriteFile(top_app_latency_sensitive, "0"); 
+      WriteFile(foreground_cpuctl + "cpu.uclamp.max", "70");
+      WriteFile(top_app_latency_sensitive, "1"); 
       WriteFile(foreground_latency_sensitive, "0");
       WriteFile("/sys/devices/platform/soc/1d84000.ufshc/clkgate_enable", "1"); 
       Feasdisable();
@@ -288,7 +284,7 @@ public:
             const std::string up_rate_limit_us_path = "/sys/devices/system/cpu/cpu" + std::to_string(i) + "/cpufreq/schedhorizon/up_rate_limit_us";
             WriteFile(filePath, frequencies);
             WriteFile(up_delayPath, efficient_freq);
-            WriteFile(scaling_min_freq_limit_path + "scaling_min_freq_limit", "1800000");
+            WriteFile(scaling_min_freq_limit_path, "1800000");
             WriteFile(down_rate_limit_us_path, "1000");
             WriteFile(up_rate_limit_us_path, "800");
         }
@@ -303,7 +299,7 @@ public:
             const std::string up_rate_limit_us_path6_7 = "/sys/devices/system/cpu/cpu" + std::to_string(i) + "/cpufreq/schedhorizon/up_rate_limit_us";
             WriteFile(filePath6_7, frequencies);
             WriteFile(up_delayPath6_7, efficient_freq);
-            WriteFile(scaling_min_freq_limit_path6_7 + "scaling_min_freq_limit", "1800000");
+            WriteFile(scaling_min_freq_limit_path6_7, "1800000");
             WriteFile(down_rate_limit_us_path6_7, "1000");
             WriteFile(up_rate_limit_us_path6_7, "800");
         }
@@ -334,9 +330,9 @@ public:
     void core_allocation() {
         if (coreAllocation) {
             utils.log("已开启核心绑定");
-            WriteFile(background_cpuset, "0-2");
-            WriteFile(system_background_cpuset, "0-3");
-            WriteFile(foreground_cpuset, "0-7");
+            WriteFile(background_cpuset, "1-3");
+            WriteFile(system_background_cpuset, "1-4");
+            WriteFile(foreground_cpuset, "1-7");
             WriteFile(top_app_cpuset, "0-7");
         }
     }
