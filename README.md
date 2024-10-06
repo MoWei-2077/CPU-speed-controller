@@ -38,7 +38,7 @@ Q: 是否需要调整EAS调度器？ <br>
 A: CS调度在8.0版本会自动调整EAS调度器的参数,无需用户自行调整。 <br>
 Q: 是否需要调整DDR LLCC L3 DDRQOS？ <br>
 A: CS调度在9.1版本中锁定了DDR LLCC L3 DDRQOS值为9999000000,所以无需用户自行调整。 <br>
-Q: 我该如何确保我的设备拥有Perfmgr内核模块？
+Q: 我该如何确保我的设备拥有Perfmgr内核模块？ <br>
 A: 开启CS调度的Feas开关 切换为极速模式 CS调度会自动识别是否拥有Perfmgr内核模块 如果有将开启Feas 如果没有将会抛出错误在日志中 PS:如果需要Feas推荐刷入VK内核 目前CS调度已接入VK内核的Feas功能。
 ## 详细介绍 
 该模块使用的调速器是schedhorizon performance<br>
