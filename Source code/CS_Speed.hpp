@@ -10,6 +10,7 @@ private:
     bool loadbalancing;
     bool DisableUFSclockgate;
     bool TouchBoost;
+    bool CFSscheduler;
     Utils utils;
     Config config;
     INIReader reader;
@@ -23,6 +24,7 @@ private:
     const std::string top_app_latency_sensitive = "/dev/cpuctl/top-app/cpu.uclamp.latency_sensitive";
     const std::string foreground_latency_sensitive = "/dev/cpuctl/foreground/cpu.uclamp.latency_sensitive";
     const std::string Touch_Boost_path = "/proc/sys/walt/input_boost/sched_boost_on_input";
+    const std::string Scheduler_path = "/proc/sys/kernel/";
 public:
     CS_Speed() : reader("/sdcard/Android/MW_CpuSpeedController/config.ini") {}
     void readAndParseConfig() {
@@ -40,6 +42,7 @@ public:
         loadbalancing = reader.GetBoolean("meta", "Load_balancing", false);
         DisableUFSclockgate = reader.GetBoolean("meta", "Disable_UFS_clock_gate", false);
         TouchBoost = reader.GetBoolean("meta", "Touch_Boost", false);
+        CFSscheduler = reader.GetBoolean("meta", "CFS_Scheduler", false);
     }
     bool checkTouchBoost_path(){
         return access(Touch_Boost_path.c_str(), F_OK) == 0;
@@ -96,8 +99,6 @@ public:
       WriteFile(top_app_cpuctl + "cpu.uclamp.max", "max");
       WriteFile(foreground_cpuctl + "cpu.uclamp.min", "0");
       WriteFile(foreground_cpuctl + "cpu.uclamp.max", "80");
-      WriteFile(top_app_latency_sensitive, "1"); 
-      WriteFile(foreground_latency_sensitive, "0");
         if (DisableUFSclockgate){
             WriteFile("/sys/devices/platform/soc/1d84000.ufshc/clkgate_enable", "0"); 
             }else{
@@ -108,14 +109,29 @@ public:
         const std::string EAScheduler_path = "/proc/sys/kernel/sched_energy_aware";
         return access(EAScheduler_path.c_str(), F_OK) == 0;
     }
-    void EAScheduler(){
+    bool checkCFS_scheduler(){
+        const std::string CFScheduler_Path = "/proc/sys/kernel/sched_migration_cost_ns";   
+        return access(CFScheduler_Path.c_str(), F_OK) == 0;
+    }
+    void CFS_Scheduler(){
+        if (CFSscheduler){
+            if(checkCFS_scheduler()){
+                WriteFile(Scheduler_path + "sched_migration_cost_ns", "400000");
+                WriteFile(Scheduler_path + "sched_min_granularity_ns", "3500000");
+                utils.log("CFS调度器参数已调整完毕");
+            } else {
+                utils.log("警告:您的设备不支持CFS调度器 请询问内核开发者解决问题");
+            }
+        }
+    }
+    
+    void EAS_Scheduler(){
         if (checkEAScheduler()){
-            const std::string EAS_Path = "/proc/sys/kernel/";
-            WriteFile(EAS_Path + "sched_min_granularity_ns", "2000000"); // EAS 调度器中的最小调度粒度 调度器将任务划分为较小的时间片段进行调度 单位NS
-            WriteFile(EAS_Path + "sched_nr_migrate", "30");  // 用于控制任务在多个 CPU 核心之间迁移的次数
-            WriteFile(EAS_Path + "sched_wakeup_granularity_ns", "3000000"); // EAS 调度器可能会根据能效考虑来调整任务的唤醒时间 单位NS
-            WriteFile(EAS_Path + "sched_schedstats", "0"); // 禁用调度统计信息收集
-            WriteFile(EAS_Path + "sched_energy_aware", "1"); // 启用EAS调度器
+            WriteFile(Scheduler_path + "sched_min_granularity_ns", "2000000"); // EAS 调度器中的最小调度粒度 调度器将任务划分为较小的时间片段进行调度 单位NS
+            WriteFile(Scheduler_path + "sched_nr_migrate", "30");  // 用于控制任务在多个 CPU 核心之间迁移的次数
+            WriteFile(Scheduler_path + "sched_wakeup_granularity_ns", "3000000"); // EAS 调度器可能会根据能效考虑来调整任务的唤醒时间 单位NS
+            WriteFile(Scheduler_path + "sched_schedstats", "0"); // 禁用调度统计信息收集
+            WriteFile(Scheduler_path + "sched_energy_aware", "1"); // 启用EAS调度器
             utils.log("EAS调度器已启用 参数已调整完毕");
         }else{
             utils.log("警告:您的设备不存在EAS调度器 请询问内核开发者解决问题");
@@ -203,8 +219,6 @@ public:
       WriteFile(top_app_cpuctl + "cpu.uclamp.max", "80");
       WriteFile(foreground_cpuctl + "cpu.uclamp.min", "0");
       WriteFile(foreground_cpuctl + "cpu.uclamp.max", "70");
-      WriteFile(top_app_latency_sensitive, "1"); 
-      WriteFile(foreground_latency_sensitive, "0");
       WriteFile("/sys/devices/platform/soc/1d84000.ufshc/clkgate_enable", "1"); 
       Feasdisable();
     }
@@ -255,8 +269,6 @@ public:
       WriteFile(top_app_cpuctl + "cpu.uclamp.max", "max");
       WriteFile(foreground_cpuctl + "cpu.uclamp.min", "0");
       WriteFile(foreground_cpuctl + "cpu.uclamp.max", "80");
-      WriteFile(top_app_latency_sensitive, "1");
-      WriteFile(foreground_latency_sensitive, "0");
       WriteFile("/sys/devices/platform/soc/1d84000.ufshc/clkgate_enable", "1"); 
       Feasdisable();
     }
@@ -307,8 +319,6 @@ public:
       WriteFile(top_app_cpuctl + "cpu.uclamp.max", "max");
       WriteFile(foreground_cpuctl + "cpu.uclamp.min", "0");
       WriteFile(foreground_cpuctl + "cpu.uclamp.max", "80"); 
-      WriteFile(top_app_latency_sensitive, "1"); 
-      WriteFile(foreground_latency_sensitive, "0");
       Feasdisable();
         if (DisableUFSclockgate){
             WriteFile("/sys/devices/platform/soc/1d84000.ufshc/clkgate_enable", "0"); 

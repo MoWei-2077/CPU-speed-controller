@@ -15,7 +15,8 @@ int main() {
     csspeed.disable_qcomGpuBoost();
     csspeed.core_allocation();
     csspeed.load_balancing();
-    csspeed.EAScheduler();
+    csspeed.EAS_Scheduler();
+    csspeed.CFS_Scheduler();
     csspeed.config_mode();
     csspeed.Touchboost();
     while (true) {
