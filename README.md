@@ -23,7 +23,7 @@
 powersave 省电模式 保证基本流畅的同时尽可能降低功耗 推荐日常使用 <br>
 balance均衡模式，比原厂略流畅的同时略省电 推荐日常使用 <br>
 performance性能模式，保证费电的同时多一点流畅度 推荐游戏使用 <br>
-fast极速模式，默认开启Feas或官调
+fast极速模式，默认官调 如果开启了Feas开关将会启用Feas
 
 ## 常见问题
 Q：是否对待机功耗有负面影响？<br>
@@ -38,6 +38,8 @@ Q: 是否需要调整EAS调度器？ <br>
 A: CS调度在8.0版本会自动调整EAS调度器的参数,无需用户自行调整。 <br>
 Q: 是否需要调整DDR LLCC L3 DDRQOS？ <br>
 A: CS调度在9.1版本中锁定了DDR LLCC L3 DDRQOS值为9999000000,所以无需用户自行调整。 <br>
+Q: 我该如何确保我的设备拥有Perfmgr内核模块？
+A: 开启CS调度的Feas开关 切换为极速模式 CS调度会自动识别是否拥有Perfmgr内核模块 如果有将开启Feas 如果没有将会抛出错误在日志中 PS:如果需要Feas推荐刷入VK内核 目前CS调度已接入VK内核的Feas功能。
 ## 详细介绍 
 该模块使用的调速器是schedhorizon performance<br>
 所以在部分场景中得益于schedhorizon调速器会比Powersave调速器拥有更快的响应速度、性能稳定性或资源利用率。适当的调度策略可以确保系统在不同负载下的表现良好 <br>
@@ -69,6 +71,7 @@ A: CS调度在9.1版本中锁定了DDR LLCC L3 DDRQOS值为9999000000,所以无�
 | Load_balancing | bool   | 负载均衡 |
 | Disable_UFS_clock_gate | bool   | 开启后将在性能模式和极速模式关闭UFS时钟门 关闭后将会减少I/O资源消耗 提高耗电和性能 PS:省电模式和均衡模式因为功耗影响默认开启UFS时钟门 |
 | TouchBoost | bool   | 开启后将启用内核的触摸升频 |
+| CFS_Scheduler | bool   | 开启后将调整CFS调度器的参数 PS:该功能目前还在测试中 |
 ```
 在CS启动时会读取`switchInode`对应路径的文件获取默认性能模式,在日志以如下方式体现：  
 2024-08-11 11:22:37] 更换模式为性能模式
@@ -90,4 +93,4 @@ echo "powersave" > /sdcard/Android/MW_CpuSpeedController/log.txt
 # 使用的开源项目
 [作者:wme7 项目:INIreader](https://github.com/wme7/INIreader) <br>
 感谢所有用户的测试反馈 这将推进CPU调速器(CS调度)的开发
-### 该文档更新于:2024/10/01 19:16
+### 该文档更新于:2024/10/06 18:14
