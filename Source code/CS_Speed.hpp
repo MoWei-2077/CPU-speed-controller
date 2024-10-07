@@ -50,7 +50,7 @@ public:
     }
     void Touchboost(){
         if (TouchBoost){
-            return;
+            return;  
         }
         if(checkTouchBoost_path()){
             WriteFile(Touch_Boost_path, "1"); // enable Touch Boost
@@ -217,12 +217,13 @@ public:
             WriteFile(scaling_min_freq_limit_path6_7, "900000");
             WriteFile(down_rate_limit_us_path6_7, "200");
             WriteFile(up_rate_limit_us_path6_7, "5000");
+            WriteFile(top_app_cpuctl + "cpu.uclamp.min", "0");
+            WriteFile(top_app_cpuctl + "cpu.uclamp.max", "80");
+            WriteFile(foreground_cpuctl + "cpu.uclamp.min", "0");
+            WriteFile(foreground_cpuctl + "cpu.uclamp.max", "70");
+            WriteFile("/sys/devices/platform/soc/1d84000.ufshc/clkgate_enable", "1"); 
         }
-      WriteFile(top_app_cpuctl + "cpu.uclamp.min", "0");
-      WriteFile(top_app_cpuctl + "cpu.uclamp.max", "80");
-      WriteFile(foreground_cpuctl + "cpu.uclamp.min", "0");
-      WriteFile(foreground_cpuctl + "cpu.uclamp.max", "70");
-      WriteFile("/sys/devices/platform/soc/1d84000.ufshc/clkgate_enable", "1"); 
+        
         if (enableFeas){
             Feasdisable();
         }
@@ -269,12 +270,13 @@ public:
             WriteFile(scaling_min_freq_limit_path6_7, "1200000");
             WriteFile(down_rate_limit_us_path6_7, "1500");
             WriteFile(up_rate_limit_us_path6_7, "1000");
+            WriteFile(top_app_cpuctl + "cpu.uclamp.min", "0");
+            WriteFile(top_app_cpuctl + "cpu.uclamp.max", "max");
+            WriteFile(foreground_cpuctl + "cpu.uclamp.min", "0");
+            WriteFile(foreground_cpuctl + "cpu.uclamp.max", "80");
+            WriteFile("/sys/devices/platform/soc/1d84000.ufshc/clkgate_enable", "1"); 
         }
-      WriteFile(top_app_cpuctl + "cpu.uclamp.min", "0");
-      WriteFile(top_app_cpuctl + "cpu.uclamp.max", "max");
-      WriteFile(foreground_cpuctl + "cpu.uclamp.min", "0");
-      WriteFile(foreground_cpuctl + "cpu.uclamp.max", "80");
-      WriteFile("/sys/devices/platform/soc/1d84000.ufshc/clkgate_enable", "1"); 
+        
         if (enableFeas){
             Feasdisable();
         }
@@ -322,16 +324,18 @@ public:
             WriteFile(scaling_min_freq_limit_path6_7, "1800000");
             WriteFile(down_rate_limit_us_path6_7, "1000");
             WriteFile(up_rate_limit_us_path6_7, "800");
+            WriteFile(top_app_cpuctl + "cpu.uclamp.min", "0");
+            WriteFile(top_app_cpuctl + "cpu.uclamp.max", "max");
+            WriteFile(foreground_cpuctl + "cpu.uclamp.min", "0");
+            WriteFile(foreground_cpuctl + "cpu.uclamp.max", "80"); 
         }
-      WriteFile(top_app_cpuctl + "cpu.uclamp.min", "0");
-      WriteFile(top_app_cpuctl + "cpu.uclamp.max", "max");
-      WriteFile(foreground_cpuctl + "cpu.uclamp.min", "0");
-      WriteFile(foreground_cpuctl + "cpu.uclamp.max", "80"); 
+        
         if (DisableUFSclockgate){
             WriteFile("/sys/devices/platform/soc/1d84000.ufshc/clkgate_enable", "0"); 
         }else{
             WriteFile("/sys/devices/platform/soc/1d84000.ufshc/clkgate_enable", "1"); 
         }
+        
         if (enableFeas){
             Feasdisable();
         }

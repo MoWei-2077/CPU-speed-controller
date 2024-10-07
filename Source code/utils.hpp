@@ -37,29 +37,29 @@ public:
         }
     }
 
-
+    size_t popenRead(const char* cmd, char* buf, const size_t maxLen) {
+        auto fp = popen(cmd, "r");
+        if (!fp) return 0;
+        auto readLen = fread(buf, 1, maxLen, fp);
+        pclose(fp);
+        return readLen;
+    }
+    
     void Init() {
-        std::string processName = "MW_CpuSpeedController";
-        std::string command = "pidof " + processName;
-        FILE* pipe = popen(command.c_str(), "r");
-
-        if (!pipe) {
-            log("错误: 进程检测失败，正在退出进程");
-            exit(1);
+        char buf[256] = { 0 };
+        if (popenRead("pidof MW_CpuSpeedController", buf, sizeof(buf)) == 0) {
+            log("进程检测失败");
+            exit(-1);
         }
 
-        int count = 0;
-        char buffer[128];
-        while (fgets(buffer, sizeof(buffer), pipe) != NULL) {
-            count++;
-        }
-
-        pclose(pipe);
-
-        if (count > 1) {
-            log("警告: CS调度已经在运行 pids: " + processName + " 当前进程(pid:%d)即将退出");
-            log("警告: 请勿手动启动CS调度，也不要在多个框架同时启动CS调度");
-            exit(1);
+        auto ptr = strchr(buf, ' ');
+        if (ptr) { // "pidNum1 pidNum2 ..."  如果存在多个pid就退出
+            char tips[256];
+            auto len = snprintf(tips, sizeof(tips),
+                "警告: CS调度已经在运行 (pid: %s), 当前进程(pid:%d)即将退出", buf, getpid());
+            printf("\n!!! \n!!! %s\n!!!\n\n", tips);
+            printf(tips, len);
+            exit(-2);
         }
     }
     
