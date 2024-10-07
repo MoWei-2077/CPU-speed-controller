@@ -43,17 +43,19 @@ public:
         DisableUFSclockgate = reader.GetBoolean("meta", "Disable_UFS_clock_gate", false);
         TouchBoost = reader.GetBoolean("meta", "Touch_Boost", false);
         CFSscheduler = reader.GetBoolean("meta", "CFS_Scheduler", false);
+        
     }
     bool checkTouchBoost_path(){
         return access(Touch_Boost_path.c_str(), F_OK) == 0;
     }
     void Touchboost(){
         if (TouchBoost){
-            if(checkTouchBoost_path()){
-                WriteFile(Touch_Boost_path, "1"); // enable Touch Boost
-            }else{
-                utils.log("警告:您的设备不支持触摸升频");
-            }
+            return;
+        }
+        if(checkTouchBoost_path()){
+            WriteFile(Touch_Boost_path, "1"); // enable Touch Boost
+        }else{
+            utils.log("警告:您的设备不支持触摸升频");
         }
     }
        
@@ -64,13 +66,13 @@ public:
             if (line == "powersave") {
                 powersave();
             }
-            else if (line == "balance") {
+            if (line == "balance") {
                 balance();
             }
-            else if (line == "performance") {
+            if (line == "performance") {
                 performance();
             }
-            else if (line == "fast") {
+            if (line == "fast") {
                 fast();
             }
         }
@@ -91,7 +93,7 @@ public:
         }
     }
     void schedutil(){
-         for (int i = 0; i <= 7; ++i) {
+        for (int i = 0; i <= 7; ++i) {
             std::string cpuDir = "/sys/devices/system/cpu/cpufreq/policy" + std::to_string(i) + "/scaling_governor";
             WriteFile(cpuDir, "schedutil");
         }
@@ -114,14 +116,15 @@ public:
         return access(CFScheduler_Path.c_str(), F_OK) == 0;
     }
     void CFS_Scheduler(){
-        if (CFSscheduler){
-            if(checkCFS_scheduler()){
-                WriteFile(Scheduler_path + "sched_migration_cost_ns", "400000");
-                WriteFile(Scheduler_path + "sched_min_granularity_ns", "3500000");
-                utils.log("CFS调度器参数已调整完毕");
-            } else {
-                utils.log("警告:您的设备不支持CFS调度器 请询问内核开发者解决问题");
-            }
+        if (CFSscheduler){ // 使用卫语句简洁代码
+            return;
+        }
+        if(checkCFS_scheduler()){
+            WriteFile(Scheduler_path + "sched_migration_cost_ns", "400000");
+            WriteFile(Scheduler_path + "sched_min_granularity_ns", "3500000");
+            utils.log("CFS调度器参数已调整完毕");
+        } else {
+            utils.log("警告:您的设备不支持CFS调度器 请询问内核开发者解决问题");
         }
     }
     
@@ -169,7 +172,7 @@ public:
             utils.log("联发科设备:Feas已启用");
             WriteFile("/sys/module/mtk_fpsgo/parameters/perfmgr_enable", "1");
         }else{
-            utils.log("警告:您的设备不支持Feas 请检查您设备是否拥有Perfmgr模块或没有开启FPSGO 模块目前将不会调整任何模式请更换模式");        
+            utils.log("警告:您的设备不支持Feas 请检查您设备是否拥有Perfmgr内核模块或没有FPSGO内核模块目前将不会调整任何模式请更换模式");        
         }
     }
     void powersave() {
@@ -220,7 +223,9 @@ public:
       WriteFile(foreground_cpuctl + "cpu.uclamp.min", "0");
       WriteFile(foreground_cpuctl + "cpu.uclamp.max", "70");
       WriteFile("/sys/devices/platform/soc/1d84000.ufshc/clkgate_enable", "1"); 
-      Feasdisable();
+        if (enableFeas){
+            Feasdisable();
+        }
     }
     void balance() {
         utils.log("均衡模式已启用");
@@ -270,11 +275,14 @@ public:
       WriteFile(foreground_cpuctl + "cpu.uclamp.min", "0");
       WriteFile(foreground_cpuctl + "cpu.uclamp.max", "80");
       WriteFile("/sys/devices/platform/soc/1d84000.ufshc/clkgate_enable", "1"); 
-      Feasdisable();
+        if (enableFeas){
+            Feasdisable();
+        }
     }
     void performance() {
         utils.log("性能模式已启用");
         schedhorizon();
+        
         WriteFile(schedhorizon_path + "efficient_freq", "0"); // 不进行频率限制
         WriteFile(schedhorizon_path + "up_delay", "10");
         WriteFile(schedhorizon_path + "scaling_min_freq_limit", "1700000");
@@ -319,11 +327,13 @@ public:
       WriteFile(top_app_cpuctl + "cpu.uclamp.max", "max");
       WriteFile(foreground_cpuctl + "cpu.uclamp.min", "0");
       WriteFile(foreground_cpuctl + "cpu.uclamp.max", "80"); 
-      Feasdisable();
         if (DisableUFSclockgate){
             WriteFile("/sys/devices/platform/soc/1d84000.ufshc/clkgate_enable", "0"); 
-            }else{
+        }else{
             WriteFile("/sys/devices/platform/soc/1d84000.ufshc/clkgate_enable", "1"); 
+        }
+        if (enableFeas){
+            Feasdisable();
         }
     }
 

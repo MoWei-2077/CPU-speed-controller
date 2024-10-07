@@ -71,8 +71,7 @@ public:
     void Initschedhorizon() {
         if (checkschedhorizon()) {
             log("您的设备支持CS调度");
-        }
-        else {
+        } else {
             log("警告:您的设备不支持CS调度 CS调度进程已退出");
             exit(1);
         }

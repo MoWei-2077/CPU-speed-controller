@@ -2,7 +2,7 @@
 
 int main() {
     std::string line;
-    std::ifstream file;
+
     Utils utils;
     CS_Speed csspeed;
     Config config;
@@ -26,13 +26,13 @@ int main() {
             if (line == "powersave") {
                 csspeed.powersave();
             }
-            else if (line == "balance") {
+            if (line == "balance") {
                  csspeed.balance();
             }
-            else if (line == "performance") {
+            if (line == "performance") {
                 csspeed.performance();
             }
-            else if (line == "fast") {
+            if (line == "fast") {
                 csspeed.fast();
             }
         }
