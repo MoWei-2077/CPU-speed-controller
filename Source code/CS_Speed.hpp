@@ -21,8 +21,6 @@ private:
     const std::string top_app_cpuset = "/dev/cpuset/top-app/cpus"; // 顶层应用
     const std::string top_app_cpuctl = "/dev/cpuctl/top-app/";
     const std::string foreground_cpuctl = "/dev/cpuctl/foreground/";
-    const std::string top_app_latency_sensitive = "/dev/cpuctl/top-app/cpu.uclamp.latency_sensitive";
-    const std::string foreground_latency_sensitive = "/dev/cpuctl/foreground/cpu.uclamp.latency_sensitive";
     const std::string Touch_Boost_path = "/proc/sys/walt/input_boost/sched_boost_on_input";
     const std::string Scheduler_path = "/proc/sys/kernel/";
 public:
@@ -49,7 +47,7 @@ public:
         return access(Touch_Boost_path.c_str(), F_OK) == 0;
     }
     void Touchboost(){
-        if (TouchBoost){
+        if (!TouchBoost){
             return;  
         }
         if(checkTouchBoost_path()){
@@ -116,7 +114,7 @@ public:
         return access(CFScheduler_Path.c_str(), F_OK) == 0;
     }
     void CFS_Scheduler(){
-        if (CFSscheduler){ // 使用卫语句简洁代码
+        if (!CFSscheduler){ // 使用卫语句简洁代码
             return;
         }
         if(checkCFS_scheduler()){
@@ -142,7 +140,7 @@ public:
     }
     void schedhorizon() {
         for (int i = 0; i <= 7; ++i) {
-            std::string cpuDir = "/sys/devices/system/cpu/cpufreq/policy" + std::to_string(i) + "/scaling_governor";
+            const std::string cpuDir = "/sys/devices/system/cpu/cpufreq/policy" + std::to_string(i) + "/scaling_governor";
             WriteFile(cpuDir, "schedhorizon");
         }
     }
@@ -223,7 +221,7 @@ public:
             WriteFile(foreground_cpuctl + "cpu.uclamp.max", "70");
             WriteFile("/sys/devices/platform/soc/1d84000.ufshc/clkgate_enable", "1"); 
         }
-        
+
         if (enableFeas){
             Feasdisable();
         }
@@ -352,17 +350,20 @@ public:
     }
       
     void core_allocation() {
-        if (coreAllocation) {
+        if (!coreAllocation) {
+            return;
+        }
             utils.log("已开启核心绑定");
             WriteFile(background_cpuset, "1-3");
             WriteFile(system_background_cpuset, "1-4");
             WriteFile(foreground_cpuset, "1-7");
             WriteFile(top_app_cpuset, "0-7");
-        }
     }
     
     void load_balancing() {
-        if (loadbalancing) {
+        if (!loadbalancing) {
+            return;
+        }
             utils.log("已开启负载均衡优化");
             WriteFile("/dev/cpuset/sched_relax_domain_level", "1");
             WriteFile("/dev/cpuset/system-background/sched_relax_domain_level", "1");
@@ -370,16 +371,16 @@ public:
             WriteFile("/dev/cpuset/background/sched_relax_domain_level", "1");
             WriteFile("/dev/cpuset/foreground/sched_relax_domain_level", "1");
             WriteFile("/dev/cpuset/top-app/sched_relax_domain_level", "1");
-        } else {
-            WriteFile("/proc/sys/walt/sched_force_lb_enable", "0"); // 经研究部分机型会默认开启该功能 开启后将会均衡负载但耗电量提高
-        }
     }
 
     void disable_qcomGpuBoost(){
-        if (disableGpuBoost){
-            std::string num_pwrlevels_path = "/sys/class/kgsl/kgsl-3d0/num_pwrlevels";
+        if (!disableGpuBoost){
+            return;
+        }
+            const std::string num_pwrlevels_path = "/sys/class/kgsl/kgsl-3d0/num_pwrlevels";
             std::ifstream file(num_pwrlevels_path);
-        int num_pwrlevels;
+            int num_pwrlevels;
+            
             if (file >> num_pwrlevels) {
             int MIN_PWRLVL = num_pwrlevels - 1;
                 std::string minPwrlvlStr = std::to_string(MIN_PWRLVL);
@@ -390,6 +391,5 @@ public:
                 WriteFile("/sys/class/kgsl/kgsl-3d0/thermal_pwrlevel", "0");   
                 WriteFile("/sys/class/kgsl/kgsl-3d0/throttling", "0");
             }
-        }
     }
 };
