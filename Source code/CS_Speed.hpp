@@ -26,8 +26,8 @@ private:
 public:
     CS_Speed() : reader("/sdcard/Android/MW_CpuSpeedController/config.ini") {}
     void readAndParseConfig() {
-         INIReader 
-         reader("/sdcard/Android/MW_CpuSpeedController/config.ini");
+        INIReader
+            reader("/sdcard/Android/MW_CpuSpeedController/config.ini");
 
         if (reader.ParseError() < 0) {
             utils.log("警告:请检查您的配置文件是否存在");
@@ -41,23 +41,24 @@ public:
         DisableUFSclockgate = reader.GetBoolean("meta", "Disable_UFS_clock_gate", false);
         TouchBoost = reader.GetBoolean("meta", "Touch_Boost", false);
         CFSscheduler = reader.GetBoolean("meta", "CFS_Scheduler", false);
-        
+
     }
-    bool checkTouchBoost_path(){
+    bool checkTouchBoost_path() {
         return access(Touch_Boost_path.c_str(), F_OK) == 0;
     }
-    void Touchboost(){
-        if (!TouchBoost){
-            return;  
+    void Touchboost() {
+        if (!TouchBoost) {
+            return;
         }
-        if(checkTouchBoost_path()){
+        if (checkTouchBoost_path()) {
             WriteFile(Touch_Boost_path, "1"); // enable Touch Boost
-        }else{
+        }
+        else {
             utils.log("警告:您的设备不支持触摸升频");
         }
     }
-       
-    void config_mode(){
+
+    void config_mode() {
         std::string line;
         std::ifstream file = config.Getconfig();
         while (std::getline(file, line)) {
@@ -75,7 +76,6 @@ public:
             }
         }
     }
-    
     void WriteFile(const std::string& filePath, const std::string& content) noexcept {
         int fd = open(filePath.c_str(), O_WRONLY | O_NONBLOCK);
 
@@ -93,8 +93,13 @@ public:
     void schedutil(){
         for (int i = 0; i <= 7; ++i) {
             std::string cpuDir = "/sys/devices/system/cpu/cpufreq/policy" + std::to_string(i) + "/scaling_governor";
+            const std::string freq_limit = "/sys/devices/system/cpu/cpu" + std::to_string(i) +  "/cpufreq/scaling_min_freq_limit";
+            WriteFile(freq_limit, "2147483647");
+            WriteFile(cpuDir, "sugov_ext");
+            usleep(100 * 1000);
             WriteFile(cpuDir, "schedutil");
         }
+        
       WriteFile(top_app_cpuctl + "cpu.uclamp.min", "0");
       WriteFile(top_app_cpuctl + "cpu.uclamp.max", "max");
       WriteFile(foreground_cpuctl + "cpu.uclamp.min", "0");
@@ -113,15 +118,25 @@ public:
         const std::string CFScheduler_Path = "/proc/sys/kernel/sched_migration_cost_ns";   
         return access(CFScheduler_Path.c_str(), F_OK) == 0;
     }
+    bool check_Spare_CFS_scheduler(){
+        const std::string Spare_CFS_scheduler = "/sys/kernel/debug/sched/migration_cost_ns";   
+        return access(Spare_CFS_scheduler.c_str(), F_OK) == 0;
+    }
     void CFS_Scheduler(){
         if (!CFSscheduler){ // 使用卫语句简洁代码
             return;
         }
         if(checkCFS_scheduler()){
-            WriteFile(Scheduler_path + "sched_migration_cost_ns", "400000");
-            WriteFile(Scheduler_path + "sched_min_granularity_ns", "3500000");
+            WriteFile(Scheduler_path + "sched_migration_cost_ns", "5000000");
+            WriteFile(Scheduler_path + "sched_min_granularity_ns", "12500000");
             utils.log("CFS调度器参数已调整完毕");
-        } else {
+        } 
+        else if (check_Spare_CFS_scheduler()){
+            WriteFile("/sys/kernel/debug/sched/migration_cost_ns", "5000000");
+            WriteFile("/sys/kernel/debug/sched/wakeup_granularity_ns", "12500000");
+            utils.log("CFS调度器参数已调整完毕");
+        } 
+        else{
             utils.log("警告:您的设备不支持CFS调度器 请询问内核开发者解决问题");
         }
     }
@@ -286,8 +301,8 @@ public:
         WriteFile(schedhorizon_path + "efficient_freq", "0"); // 不进行频率限制
         WriteFile(schedhorizon_path + "up_delay", "10");
         WriteFile(schedhorizon_path + "scaling_min_freq_limit", "1700000");
-        WriteFile(schedhorizon_path + "down_rate_limit_us", "1000");
-        WriteFile(schedhorizon_path + "up_rate_limit_us", "800");
+        WriteFile(schedhorizon_path + "down_rate_limit_us", "3000");
+        WriteFile(schedhorizon_path + "up_rate_limit_us", "500");
 
         /*
           当系统试图将 CPU 核心的频率设置得比 scaling_min_freq_limit 更低时，
@@ -304,9 +319,9 @@ public:
             const std::string up_rate_limit_us_path = "/sys/devices/system/cpu/cpu" + std::to_string(i) + "/cpufreq/schedhorizon/up_rate_limit_us";
             WriteFile(filePath, frequencies);
             WriteFile(up_delayPath, efficient_freq);
-            WriteFile(scaling_min_freq_limit_path, "1800000");
-            WriteFile(down_rate_limit_us_path, "1000");
-            WriteFile(up_rate_limit_us_path, "800");
+            WriteFile(scaling_min_freq_limit_path, "2000000");
+            WriteFile(down_rate_limit_us_path, "3000");
+            WriteFile(up_rate_limit_us_path, "500");
         }
 
         const std::string frequencies6_7 = "1200000 1800000 2500000";
@@ -320,8 +335,8 @@ public:
             WriteFile(filePath6_7, frequencies);
             WriteFile(up_delayPath6_7, efficient_freq);
             WriteFile(scaling_min_freq_limit_path6_7, "1800000");
-            WriteFile(down_rate_limit_us_path6_7, "1000");
-            WriteFile(up_rate_limit_us_path6_7, "800");
+            WriteFile(down_rate_limit_us_path6_7, "3000");
+            WriteFile(up_rate_limit_us_path6_7, "500");
             WriteFile(top_app_cpuctl + "cpu.uclamp.min", "0");
             WriteFile(top_app_cpuctl + "cpu.uclamp.max", "max");
             WriteFile(foreground_cpuctl + "cpu.uclamp.min", "0");
