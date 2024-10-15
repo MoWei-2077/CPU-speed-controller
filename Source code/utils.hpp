@@ -36,6 +36,24 @@ public:
             logfile.close();
         }
     }
+   
+    std::string exec(const std::string& command) {
+        char buffer[128];
+        std::string result;
+
+    std::unique_ptr<FILE, decltype(&pclose)> pipe(popen(command.c_str(), "r"), pclose);
+        if (!pipe) {
+            std::cerr << "popen() failed!" << std::endl;
+            return "";
+        }
+        
+        if (fgets(buffer, sizeof(buffer), pipe.get()) != nullptr) {
+            result = buffer; 
+        }
+
+        return result;  
+    }
+
 
     size_t popenRead(const char* cmd, char* buf, const size_t maxLen) {
         auto fp = popen(cmd, "r");

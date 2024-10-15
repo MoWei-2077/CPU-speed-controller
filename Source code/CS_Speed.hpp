@@ -23,9 +23,9 @@ private:
     const std::string foreground_cpuctl = "/dev/cpuctl/foreground/";
     const std::string Touch_Boost_path = "/proc/sys/walt/input_boost/sched_boost_on_input";
     const std::string Scheduler_path = "/proc/sys/kernel/";
-public:
-    CS_Speed() : reader("/sdcard/Android/MW_CpuSpeedController/config.ini") {}
-    void readAndParseConfig() {
+    const std::string walt_path = "/proc/sys/walt/";
+public:D
+    CS_Speed() : reader("/sdcard/Android/MW_CpuSpeedController/config.ini") {}D
         INIReader
             reader("/sdcard/Android/MW_CpuSpeedController/config.ini");
 
@@ -90,14 +90,31 @@ public:
             chmod(filePath.c_str(), 0444);
         }
     }
-    void schedutil(){
+    void walt(){
+        if (checkWalt()) {
+            WriteFile(walt_path + "sched_upmigrate", "95	95");
+            WriteFile(walt_path + "sched_downmigrate", "85	85");
+            WriteFile(walt_path + "sched_busy_hyst_ns", "0");
+            WriteFile(walt_path + "sched_group_upmigrate", "100");
+            WriteFile(walt_path + "sched_asymcap_boost", "1");
+            WriteFile(walt_path + "sched_force_lb_enable", "1");
+        for (int i = 0; i <= 7; ++i) {
+                std::string cpuDir = "/sys/devices/system/cpu/cpufreq/policy" + std::to_string(i) + "/walt/";
+                WriteFile(cpuDir + "rtg_boost_freq", "0");
+                WriteFile(cpuDir + "hispeed_freq", "0");
+            }
+        }
+    }
+    void reset(){
         for (int i = 0; i <= 7; ++i) {
             std::string cpuDir = "/sys/devices/system/cpu/cpufreq/policy" + std::to_string(i) + "/scaling_governor";
             const std::string freq_limit = "/sys/devices/system/cpu/cpu" + std::to_string(i) +  "/cpufreq/scaling_min_freq_limit";
-            WriteFile(freq_limit, "2147483647");
+            const std::string freq_max = "/sys/devices/system/cpu/cpu" + std::to_string(i) +  "/cpufreq/scaling_max_freq";
+            WriteFile(freq_limit, "0");
+            WriteFile(freq_max, "2147483647");
             WriteFile(cpuDir, "sugov_ext");
-            usleep(100 * 1000);
-            WriteFile(cpuDir, "schedutil");
+            WriteFile(cpuDir, "walt");
+            walt();
         }
         
       WriteFile(top_app_cpuctl + "cpu.uclamp.min", "0");
@@ -109,6 +126,10 @@ public:
             }else{
             WriteFile("/sys/devices/platform/soc/1d84000.ufshc/clkgate_enable", "1"); 
         }
+    }
+    bool checkWalt(){
+        const std::string walt_Path = "/sys/devices/system/cpu/cpufreq/policy0/walt";
+        return access(walt_Path.c_str(), F_OK) == 0;
     }
     bool checkEAScheduler(){
         const std::string EAScheduler_path = "/proc/sys/kernel/sched_energy_aware";
@@ -196,7 +217,7 @@ public:
         WriteFile(schedhorizon_path + "up_delay", "60");
         WriteFile(schedhorizon_path + "scaling_min_freq_limit", "1000000");
         WriteFile(schedhorizon_path + "down_rate_limit_us", "200");
-        WriteFile(schedhorizon_path + "up_rate_limit_us", "5000");
+        WriteFile(schedhorizon_path + "up_rate_limit_us", "3000");
 
         /*
           当系统试图将 CPU 核心的频率设置得比 scaling_min_freq_limit 更低时，
@@ -214,7 +235,7 @@ public:
             WriteFile(up_delayPath, efficient_freq); 
             WriteFile(scaling_min_freq_limit_path, "900000");
             WriteFile(down_rate_limit_us_path, "200");
-            WriteFile(up_rate_limit_us_path, "5000");
+            WriteFile(up_rate_limit_us_path, "3000");
         }
 
         const std::string frequencies6_7 = "1200000 1800000 2500000";
@@ -229,7 +250,7 @@ public:
             WriteFile(up_delayPath6_7, efficient_freq6_7);
             WriteFile(scaling_min_freq_limit_path6_7, "900000");
             WriteFile(down_rate_limit_us_path6_7, "200");
-            WriteFile(up_rate_limit_us_path6_7, "5000");
+            WriteFile(up_rate_limit_us_path6_7, "3000");
             WriteFile(top_app_cpuctl + "cpu.uclamp.min", "0");
             WriteFile(top_app_cpuctl + "cpu.uclamp.max", "80");
             WriteFile(foreground_cpuctl + "cpu.uclamp.min", "0");
@@ -356,11 +377,11 @@ public:
 
     void fast() {
         if (enableFeas) {
-            schedutil(); //Feas不基于任何调速器 他只负责进行调频
+            reset(); 
             EnableFeas();
         }else{
-            utils.log("极速模式已切换 将更换schedutil调速器 CS调度将不会接管CPU频率等 将由EAS调度器提供接管");
-            schedutil();
+            utils.log("极速模式已切换 将更换reset调速器 CS调度将不会接管CPU频率等 将由EAS调度器提供接管");
+            reset();
         }
     }
       
@@ -382,7 +403,6 @@ public:
             utils.log("已开启负载均衡优化");
             WriteFile("/dev/cpuset/sched_relax_domain_level", "1");
             WriteFile("/dev/cpuset/system-background/sched_relax_domain_level", "1");
-            WriteFile("/proc/sys/walt/sched_force_lb_enable", "1");
             WriteFile("/dev/cpuset/background/sched_relax_domain_level", "1");
             WriteFile("/dev/cpuset/foreground/sched_relax_domain_level", "1");
             WriteFile("/dev/cpuset/top-app/sched_relax_domain_level", "1");

@@ -18,9 +18,9 @@ int main() {
     csspeed.core_allocation();
     csspeed.load_balancing();
     csspeed.EAS_Scheduler();
-    csspeed.CFS_Scheduler();
-    csspeed.config_mode();
+    csspeed.CFS_Scheduler();    
     csspeed.Touchboost();
+    csspeed.config_mode();
     while (true) {
             utils.InotifyMain("/sdcard/Android/MW_CpuSpeedController/config.txt", IN_MODIFY); // 检测配置文件变化
             std::ifstream file = config.Getconfig();
