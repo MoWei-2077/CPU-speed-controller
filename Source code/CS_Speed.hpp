@@ -24,8 +24,9 @@ private:
     const std::string Touch_Boost_path = "/proc/sys/walt/input_boost/sched_boost_on_input";
     const std::string Scheduler_path = "/proc/sys/kernel/";
     const std::string walt_path = "/proc/sys/walt/";
-public:D
-    CS_Speed() : reader("/sdcard/Android/MW_CpuSpeedController/config.ini") {}D
+public:
+    CS_Speed() : reader("/sdcard/Android/MW_CpuSpeedController/config.ini") {}
+    void readAndParseConfig() {
         INIReader
             reader("/sdcard/Android/MW_CpuSpeedController/config.ini");
 
