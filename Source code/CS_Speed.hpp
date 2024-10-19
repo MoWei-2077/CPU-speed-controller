@@ -381,7 +381,7 @@ public:
             reset(); 
             EnableFeas();
         }else{
-            utils.log("极速模式已切换 将更换reset调速器 CS调度将不会接管CPU频率等 将由EAS调度器提供接管");
+            utils.log("极速模式已切换 将恢复官调");
             reset();
         }
     }
