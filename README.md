@@ -9,7 +9,7 @@
 3.该调度为ZTC内核专属调度 当然别的内核也能用 但效果不如ztc内核
 
 #### 工作条件
-1.目前该调度适用于Android12-14 <br>
+1.目前该调度适用于Android12-15 <br>
 2.内核要求:5.10-5.15的GKI内核 PS:不推荐潘多拉和魔理沙内核进行配合使用
 
 ## 安装
@@ -36,8 +36,6 @@ Q: 什么时候更新XXXX版本？ <br>
 A: 请将需要更新的内容,发送至我的邮箱,邮箱:mowei2077@gmail.com😋。 <br>
 Q: 是否需要调整EAS调度器？ <br>
 A: CS调度在8.0版本会自动调整EAS调度器的参数,无需用户自行调整。 <br>
-Q: 是否需要调整DDR LLCC L3 DDRQOS？ <br>
-A: CS调度在9.1版本中锁定了DDR LLCC L3 DDRQOS值为9999000000,所以无需用户自行调整。 <br>
 Q: 我该如何确保我的设备拥有Perfmgr内核模块？ <br>
 A: 开启CS调度的Feas开关 切换为极速模式 CS调度会自动识别是否拥有Perfmgr内核模块 如果有将开启Feas 如果没有将会抛出错误在日志中 PS:如果需要Feas推荐刷入VK内核 目前CS调度已接入VK内核的Feas功能。
 ## 详细介绍 
@@ -51,7 +49,7 @@ A: 开启CS调度的Feas开关 切换为极速模式 CS调度会自动识别是�
 
 ```ini
    [meta]
-   name = "CS调度配置文件V3.0"
+   name = "CS调度配置文件V4.0"
    author = "CoolApk@MoWei"
    Enable_Feas = false
    Disable_qcom_GpuBoost = false
@@ -66,12 +64,12 @@ A: 开启CS调度的Feas开关 切换为极速模式 CS调度会自动识别是�
 | author   | string   | 配置文件的作者信息                             |
 | Working_mode | string   | CS调度的工作调速器，目前该字段不起任何作用 |
 | Enable_Feas | bool   | 开启此功能后再开启极速模式就会恢复schedutil调速器再开启Feas |
-| Disable_qcom_GpuBoost | bool   | 开启后将会关闭高通的GPUBoost 防止GPUBoost乱升频 |
-| Core_allocation | bool   | 核心绑定 开启后将会调整应用的CPUSET与绑定线程的CPUSET不产生冲突 例如:A-SOUL和Scene的核心绑定 |
-| Load_balancing | bool   | 负载均衡 |
+| Disable_qcom_GpuBoost | bool   | 开启后将会关闭高通的GPUBoost 防止GPUBoost乱升频 PS:推荐降压后开启 |
+| Core_allocation | bool   | 核心绑定 开启后将会调整应用的CPUSET与绑定线程的CPUSET不产生冲突 例如:A-SOUL和Scene的核心绑定 PS:无脑开启 |
+| Load_balancing | bool   | 开启后将会平衡负载 PS:推荐开启|
 | Disable_UFS_clock_gate | bool   | 开启后将在性能模式和极速模式关闭UFS时钟门 关闭后将会减少I/O资源消耗 提高耗电和性能 PS:省电模式和均衡模式因为功耗影响默认开启UFS时钟门 |
-| TouchBoost | bool   | 开启后将启用内核的触摸升频 |
-| CFS_Scheduler | bool   | 开启后将调整CFS调度器的参数 PS:该功能目前还在测试中 |
+| TouchBoost | bool   | 开启后将启用内核的触摸升频 PS:触摸升频 不推荐日用党开启 |
+| CFS_Scheduler | bool   | 开启后将优化完全公平调度器的参数 PS:5.15内核不需要开启 |
 ```
 在CS启动时会读取`switchInode`对应路径的文件获取默认性能模式,在日志以如下方式体现：  
 2024-08-11 11:22:37] 更换模式为性能模式
@@ -93,4 +91,4 @@ echo "powersave" > /sdcard/Android/MW_CpuSpeedController/log.txt
 # 使用的开源项目
 [作者:wme7 项目:INIreader](https://github.com/wme7/INIreader) <br>
 感谢所有用户的测试反馈 这将推进CPU调速器(CS调度)的开发
-### 该文档更新于:2024/10/06 18:14
+### 该文档更新于:2024/10/19 17:32
