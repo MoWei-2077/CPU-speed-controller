@@ -46,7 +46,11 @@ public:
     bool checkTouchBoost_path() {
         return access(Touch_Boost_path.c_str(), F_OK) == 0;
     }
+<<<<<<< HEAD
     bool checkMTK_path() {
+=======
+    bool checkMTK_path(){
+>>>>>>> 4ab80878515cde06eb347e3a1affd47791e03a08
         return access(MTK_path.c_str(), F_OK) == 0;
     }
     void Touchboost() {
@@ -102,7 +106,11 @@ public:
             WriteFile(walt_path + "sched_asymcap_boost", "1");
             WriteFile(walt_path + "sched_force_lb_enable", "1");
             WriteFile(walt_path + "sched_boost", "3");
+<<<<<<< HEAD
             for (int i = 0; i <= 7; ++i) {
+=======
+        for (int i = 0; i <= 7; ++i) {
+>>>>>>> 4ab80878515cde06eb347e3a1affd47791e03a08
                 std::string cpuDir = "/sys/devices/system/cpu/cpufreq/policy" + std::to_string(i) + "/walt/";
                 WriteFile(cpuDir + "rtg_boost_freq", "0");
                 WriteFile(cpuDir + "hispeed_freq", "0");
@@ -116,10 +124,16 @@ public:
             const std::string freq_max = "/sys/devices/system/cpu/cpu" + std::to_string(i) + "/cpufreq/scaling_max_freq";
             WriteFile(freq_limit, "0");
             WriteFile(freq_max, "2147483647");
+<<<<<<< HEAD
             if (checkMTK_path()) {
                 WriteFile(cpuDir, "schedutil");
             }
             else {
+=======
+            if (checkMTK_path()){
+                WriteFile(cpuDir, "schedutil");
+            } else {
+>>>>>>> 4ab80878515cde06eb347e3a1affd47791e03a08
                 WriteFile(cpuDir, "walt");
                 walt();
             }
@@ -402,11 +416,19 @@ public:
         if (!coreAllocation) {
             return;
         }
+<<<<<<< HEAD
         utils.log("已开启核心绑定");
         WriteFile(background_cpuset, "0-3");
         WriteFile(system_background_cpuset, "0-4");
         WriteFile(foreground_cpuset, "0-6");
         WriteFile(top_app_cpuset, "0-7");
+=======
+            utils.log("已开启核心绑定");
+            WriteFile(background_cpuset, "0-3");
+            WriteFile(system_background_cpuset, "0-4");
+            WriteFile(foreground_cpuset, "0-6");
+            WriteFile(top_app_cpuset, "0-7");
+>>>>>>> 4ab80878515cde06eb347e3a1affd47791e03a08
     }
 
     void load_balancing() {
@@ -428,15 +450,25 @@ public:
         const std::string num_pwrlevels_path = "/sys/class/kgsl/kgsl-3d0/num_pwrlevels";
         std::ifstream file(num_pwrlevels_path);
         int num_pwrlevels;
+<<<<<<< HEAD
 
         if (file >> num_pwrlevels) {
             int MIN_PWRLVL = num_pwrlevels - 1;
+=======
+            
+        if (file >> num_pwrlevels) {
+        int MIN_PWRLVL = num_pwrlevels - 1;
+>>>>>>> 4ab80878515cde06eb347e3a1affd47791e03a08
             std::string minPwrlvlStr = std::to_string(MIN_PWRLVL);
             utils.log("已关闭高通GPU Boost");
             WriteFile("/sys/class/kgsl/kgsl-3d0/default_pwrlevel", minPwrlvlStr);
             WriteFile("/sys/class/kgsl/kgsl-3d0/min_pwrlevel", minPwrlvlStr);
             WriteFile("/sys/class/kgsl/kgsl-3d0/max_pwrlevel", "0");
+<<<<<<< HEAD
             WriteFile("/sys/class/kgsl/kgsl-3d0/thermal_pwrlevel", "0");
+=======
+            WriteFile("/sys/class/kgsl/kgsl-3d0/thermal_pwrlevel", "0");   
+>>>>>>> 4ab80878515cde06eb347e3a1affd47791e03a08
             WriteFile("/sys/class/kgsl/kgsl-3d0/throttling", "0");
         }
     }
