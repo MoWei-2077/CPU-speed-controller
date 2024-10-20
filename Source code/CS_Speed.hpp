@@ -24,6 +24,7 @@ private:
     const std::string Touch_Boost_path = "/proc/sys/walt/input_boost/sched_boost_on_input";
     const std::string Scheduler_path = "/proc/sys/kernel/";
     const std::string walt_path = "/proc/sys/walt/";
+    const std::string MTK_path = "/data/adb/modules/MW_CpuSpeedController/MTKPhone";
 public:
     CS_Speed() : reader("/sdcard/Android/MW_CpuSpeedController/config.ini") {}
     void readAndParseConfig() {
@@ -46,6 +47,9 @@ public:
     }
     bool checkTouchBoost_path() {
         return access(Touch_Boost_path.c_str(), F_OK) == 0;
+    }
+    bool checkMTK_path(){
+        return access(MTK_path.c_str(), F_OK) == 0;
     }
     void Touchboost() {
         if (!TouchBoost) {
@@ -93,12 +97,13 @@ public:
     }
     void walt(){
         if (checkWalt()) {
-            WriteFile(walt_path + "sched_upmigrate", "95	95");
-            WriteFile(walt_path + "sched_downmigrate", "85	85");
+            WriteFile("/sys/kernel/msm_performance/parameters/cpu_min_freq", "0:0 1:0 2:0 3:0 4:0 5:0 6:0 7:0");
+            WriteFile("/sys/kernel/msm_performance/parameters/cpu_max_freq", "0:9999999 1:9999999 2:9999999 3:9999999 4:9999999 5:9999999 6:9999999 7:9999999");
             WriteFile(walt_path + "sched_busy_hyst_ns", "0");
             WriteFile(walt_path + "sched_group_upmigrate", "100");
             WriteFile(walt_path + "sched_asymcap_boost", "1");
             WriteFile(walt_path + "sched_force_lb_enable", "1");
+            WriteFile(walt_path + "sched_boost", "3");
         for (int i = 0; i <= 7; ++i) {
                 std::string cpuDir = "/sys/devices/system/cpu/cpufreq/policy" + std::to_string(i) + "/walt/";
                 WriteFile(cpuDir + "rtg_boost_freq", "0");
@@ -113,9 +118,12 @@ public:
             const std::string freq_max = "/sys/devices/system/cpu/cpu" + std::to_string(i) +  "/cpufreq/scaling_max_freq";
             WriteFile(freq_limit, "0");
             WriteFile(freq_max, "2147483647");
-            WriteFile(cpuDir, "sugov_ext");
-            WriteFile(cpuDir, "walt");
-            walt();
+            if (checkMTK_path()){
+                WriteFile(cpuDir, "schedutil");
+            } else {
+                WriteFile(cpuDir, "walt");
+                walt();
+            }
         }
         
       WriteFile(top_app_cpuctl + "cpu.uclamp.min", "0");
@@ -391,9 +399,9 @@ public:
             return;
         }
             utils.log("已开启核心绑定");
-            WriteFile(background_cpuset, "1-3");
-            WriteFile(system_background_cpuset, "1-4");
-            WriteFile(foreground_cpuset, "1-7");
+            WriteFile(background_cpuset, "0-3");
+            WriteFile(system_background_cpuset, "0-4");
+            WriteFile(foreground_cpuset, "0-6");
             WriteFile(top_app_cpuset, "0-7");
     }
     
@@ -413,19 +421,19 @@ public:
         if (!disableGpuBoost){
             return;
         }
-            const std::string num_pwrlevels_path = "/sys/class/kgsl/kgsl-3d0/num_pwrlevels";
-            std::ifstream file(num_pwrlevels_path);
-            int num_pwrlevels;
+        const std::string num_pwrlevels_path = "/sys/class/kgsl/kgsl-3d0/num_pwrlevels";
+        std::ifstream file(num_pwrlevels_path);
+        int num_pwrlevels;
             
-            if (file >> num_pwrlevels) {
-            int MIN_PWRLVL = num_pwrlevels - 1;
-                std::string minPwrlvlStr = std::to_string(MIN_PWRLVL);
-                utils.log("已关闭高通GPU Boost");
-                WriteFile("/sys/class/kgsl/kgsl-3d0/default_pwrlevel", minPwrlvlStr);
-                WriteFile("/sys/class/kgsl/kgsl-3d0/min_pwrlevel", minPwrlvlStr);
-                WriteFile("/sys/class/kgsl/kgsl-3d0/max_pwrlevel", "0");
-                WriteFile("/sys/class/kgsl/kgsl-3d0/thermal_pwrlevel", "0");   
-                WriteFile("/sys/class/kgsl/kgsl-3d0/throttling", "0");
-            }
+        if (file >> num_pwrlevels) {
+        int MIN_PWRLVL = num_pwrlevels - 1;
+            std::string minPwrlvlStr = std::to_string(MIN_PWRLVL);
+            utils.log("已关闭高通GPU Boost");
+            WriteFile("/sys/class/kgsl/kgsl-3d0/default_pwrlevel", minPwrlvlStr);
+            WriteFile("/sys/class/kgsl/kgsl-3d0/min_pwrlevel", minPwrlvlStr);
+            WriteFile("/sys/class/kgsl/kgsl-3d0/max_pwrlevel", "0");
+            WriteFile("/sys/class/kgsl/kgsl-3d0/thermal_pwrlevel", "0");   
+            WriteFile("/sys/class/kgsl/kgsl-3d0/throttling", "0");
+        }
     }
 };
