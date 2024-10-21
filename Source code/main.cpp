@@ -1,3 +1,4 @@
+#pragma once
 #include "CS_Speed.hpp"
 
 int main() {
@@ -24,13 +25,13 @@ int main() {
     csspeed.config_mode();
 
     pid_t fPid = fork();
-    if (fpid == -1) { 
+    if (fPid == -1) { 
 
         utils.log("fork控制进程失败，请使用scene接管");
         
     }
 
-    if (fpid == 0) { // 控制器进程
+    if (fPid == 0) { // 控制器进程
         utils.log("fork控制进程成功");
         controller.bootFunction();
         exit(0); 
