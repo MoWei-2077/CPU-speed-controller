@@ -6,7 +6,6 @@ int main() {
     Utils utils;
     CS_Speed csspeed;
     Config config;
-    Controller controller;
     
     utils.clear_log();// 先清理日志 否则无法正确抛出错误
     usleep(500 * 1000); // 先等待一会 部分设备这个时候还在insmod schedhorizon.ko中
@@ -22,20 +21,6 @@ int main() {
     csspeed.CFS_Scheduler();    
     csspeed.Touchboost();
     csspeed.config_mode();
-
-    pid_t fPid = fork();
-    if (fpid == -1) { 
-
-        utils.log("fork控制进程失败，请使用scene接管");
-        
-    }
-
-    if (fpid == 0) { // 控制器进程
-        utils.log("fork控制进程成功");
-        controller.bootFunction();
-        exit(0); 
-    }
-
     while (true) {
             utils.InotifyMain("/sdcard/Android/MW_CpuSpeedController/config.txt", IN_MODIFY); // 检测配置文件变化
             std::ifstream file = config.Getconfig();
