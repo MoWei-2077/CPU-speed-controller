@@ -1,5 +1,6 @@
 #pragma once
 #include "CS_Speed.hpp"
+#include "Controller.hpp"
 
 int main() {
     std::string line;

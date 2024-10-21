@@ -20,6 +20,8 @@ private:
     
     CS_Speed csspeed;
 
+    FILE* pipe;
+
     const std::string bPath = "/sdcard/Android/CSController/balance.txt";
     const std::string poPath = "/sdcard/Android/CSController/powersave.txt";
     const std::string pePath = "/sdcard/Android/CSController/performance.txt";
@@ -68,22 +70,22 @@ private:
             switch (i)
             {
             case 0:
-                FILE * pipe = popen("su -c cat /sdcard/Android/CSController/powersave.txt", "r");
+                pipe = popen("su -c cat /sdcard/Android/CSController/powersave.txt", "r");
                 polist.clear();
                 polist = readPackageNamesFromPipe(pipe);
                 break;
             case 1:
-                FILE * pipe = popen("su -c cat /sdcard/Android/CSController/balance.txt", "r");
+                pipe = popen("su -c cat /sdcard/Android/CSController/balance.txt", "r");
                 blist.clear();
                 blist = readPackageNamesFromPipe(pipe);
                 break;
             case 2:
-                FILE * pipe = popen("su -c cat /sdcard/Android/CSController/performance.txt", "r");
+                pipe = popen("su -c cat /sdcard/Android/CSController/performance.txt", "r");
                 pelist.clear();
                 pelist = readPackageNamesFromPipe(pipe);
                 break;
             case 3:
-                FILE * pipe = popen("su -c cat /sdcard/Android/CSController/fast.txt", "r");
+                pipe = popen("su -c cat /sdcard/Android/CSController/fast.txt", "r");
                 falist.clear();
                 falist = readPackageNamesFromPipe(pipe);
                 break;
@@ -186,7 +188,7 @@ private:
     }
 
     std::string runCommand(const std::string& command) {
-        FILE* pipe = popen(command.c_str(), "r");
+        pipe = popen(command.c_str(), "r");
         if (!pipe) {
             return "";
         }
