@@ -1,32 +1,23 @@
 #pragma once
-#include <sys/inotify.h>
-#include <unistd.h>
-#include <iostream>
-#include <string>
-#include <fcntl.h> 
-#include <stdio.h>
-#include <errno.h>
-#include <vector>
-#include <fstream>
-#include "utils.hpp"
 #include "CS_Speed.hpp"
+#include "utils.hpp"
 
 class Controller {
 private:
     Utils utils;
-    const std::string topPath = "/dev/cpuset/top-app/cgroup.procs";
+    
+        
+    CS_Speed csspeed;
+    FILE* pipe;
     const std::string configPath = "/sdcard/Android/MW_CpuSpeedController/config.txt";
     const std::string getTopPackage = "dumpsys window | grep -i \"mCurrentFocus\" | awk -F'[/{]' '{print $2}' | cut -d '/' -f 1 | awk '{print $3}'";
-    
-    CS_Speed csspeed;
 
-    FILE* pipe;
 
     const std::string bPath = "/sdcard/Android/CSController/balance.txt";
     const std::string poPath = "/sdcard/Android/CSController/powersave.txt";
     const std::string pePath = "/sdcard/Android/CSController/performance.txt";
     const std::string faPath = "/sdcard/Android/CSController/fast.txt";
-
+    std::vector<std::thread> threads;
     std::vector<std::string> blist;
     std::vector<std::string> polist;
     std::vector<std::string> pelist;
@@ -98,94 +89,37 @@ private:
     bool containsSubstring(const std::string& subStr, const std::vector<std::string>& strVec) {
         for (const auto& str : strVec) {
             if (str.find(subStr) != std::string::npos) {
-                return true;  // ×Ó×Ö·û´®´æÔÚ
+                return true;  // å­å­—ç¬¦ä¸²å­˜åœ¨
             }
         }
-        return false;  // ×Ó×Ö·û´®²»´æÔÚÓÚÈÎºÎÔªËØÖĞ
+        return false;   // å­å­—ç¬¦ä¸²ä¸å­˜åœ¨äºä»»ä½•å…ƒç´ ä¸­
     }
 
     void mainControlFunction() {
-        int status;
         std::string out;
         while (true) {
-            status = monitorFileChanges(topPath, IN_MODIFY);
-            if (status == 1) {
-                //´ËÊ±Ç°Ì¨±ä»¯
-                out = runCommand(getTopPackage);
-                if (out == " " || out == "")continue;
-                if (containsSubstring(out, polist)) {
-                    csspeed.powersave();
-                    utils.log("Ä£Ê½ÇĞ»»Îªpowersave");
-                }
-                else if (containsSubstring(out, blist)) {
-                    csspeed.balance();
-                    utils.log("Ä£Ê½ÇĞ»»Îªbalance");
-                }
-                else if (containsSubstring(out, pelist)) {
-                    csspeed.performance();
-                    utils.log("Ä£Ê½ÇĞ»»Îªperformance");
-                }
-                else if (containsSubstring(out, falist)) {
-                    csspeed.fast();
-                    utils.log("Ä£Ê½ÇĞ»»Îªfast");
-                }
-                else {
-                    continue;
-                }
+            utils.InotifyMain("/dev/cpuset/top-app/cgroup.procs", IN_MODIFY);
+            // è‡ªåŠ¨å µå¡
+            out = runCommand(getTopPackage);
+            if (out == " " || out == "")continue;
+            if (containsSubstring(out, polist)) {
+                csspeed.powersave();
+            }
+            else if (containsSubstring(out, blist)) {
+                csspeed.balance();
+            }
+            else if (containsSubstring(out, pelist)) {
+                csspeed.performance();
+            }
+            else if (containsSubstring(out, falist)) {
+                csspeed.fast();
+            }
+            else {
+                continue;
             }
         }
     }
-
-    // ¼àÌıÇ°Ì¨µÄ±ä»¯
-    int monitorFileChanges(const std::string_view& path, unsigned int mask) {
-        int fd; // ÎÄ¼şÃèÊö·û
-        char buffer[1024]; // »º³åÇø
-        struct inotify_event* event; // ÊÂ¼ş½á¹¹Ìå
-        int wd; // ¼àÊÓÃèÊö·û
-
-        // ³õÊ¼»¯ inotify ÊµÀı
-        fd = inotify_init();
-        if (fd == -1) {
-            return -1;
-        }
-
-        // Ìí¼Ó¼àÊÓµÄÎÄ¼ş»òÄ¿Â¼
-        wd = inotify_add_watch(fd, path.data(), mask);
-        if (wd == -1) {
-            close(fd);
-            return -1;
-        }
-
-        while (true) {
-            // ¶ÁÈ¡ inotify ÊÂ¼ş
-            int len = read(fd, buffer, sizeof(buffer));
-            if (len == -1) {
-                close(fd);
-                return -1;
-            }
-
-            char* ptr = buffer;
-            while (ptr < buffer + len) {
-                event = (struct inotify_event*)ptr;
-
-                // ¼ì²âµ½ IN_MODIFY ÊÂ¼şºó·µ»Ø 1
-                if ((event->mask & IN_MODIFY) != 0) {
-                    close(fd);
-                    return 1;
-                }
-
-                ptr += sizeof(struct inotify_event) + event->len;
-            }
-        }
-
-        // ÇåÀí×ÊÔ´
-        close(fd);
-        return 0; // ²»Ó¦µ½´ïÕâÀï
-    }
-
-    void writeConfig(std::string mode) {
-        runCommand("su -c echo '" + mode + "' > " + std::string(configPath));
-    }
+    
 
     std::string runCommand(const std::string& command) {
         pipe = popen(command.c_str(), "r");
@@ -202,10 +136,10 @@ private:
         pclose(pipe);
         return result;
     }
-
 public:
-
     void bootFunction() {
-        mainControlFunction();
+        if (csspeed.Dynamic_response){
+            threads.emplace_back(std::thread(&Controller::mainControlFunction, this)).detach();
+        }
     }
 };

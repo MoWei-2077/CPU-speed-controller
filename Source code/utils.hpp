@@ -12,6 +12,9 @@
 #include <stdlib.h>
 #include <sys/stat.h>
 #include <sys/types.h>
+#include <vector>
+#include <errno.h>
+#include <thread>
 #include "INIreader.hpp"
 #include <sys/inotify.h>
 

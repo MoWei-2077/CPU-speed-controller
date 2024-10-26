@@ -1,4 +1,3 @@
-#pragma once
 #include "CS_Speed.hpp"
 #include "Controller.hpp"
 
@@ -24,20 +23,7 @@ int main() {
     csspeed.CFS_Scheduler();    
     csspeed.Touchboost();
     csspeed.config_mode();
-
-    pid_t fPid = fork();
-    if (fPid == -1) { 
-
-        utils.log("fork控制进程失败，请使用scene接管");
-        
-    }
-
-    if (fPid == 0) { // 控制器进程
-        utils.log("fork控制进程成功");
-        controller.bootFunction();
-        exit(0); 
-    }
-
+    controller.bootFunction();
     while (true) {
             utils.InotifyMain("/sdcard/Android/MW_CpuSpeedController/config.txt", IN_MODIFY); // 检测配置文件变化
             std::ifstream file = config.Getconfig();
