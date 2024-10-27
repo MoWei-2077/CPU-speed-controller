@@ -25,6 +25,17 @@ balance均衡模式，比原厂略流畅的同时略省电 推荐日常使用 <b
 performance性能模式，保证费电的同时多一点流畅度 推荐游戏使用 <br>
 fast极速模式，默认官调 如果开启了Feas开关将会启用Feas
 
+### 动态响应功能
+自CS调度10.0版本开始，CS调度引入了Dynamic_response(动态响应)或者说自身切换功能，将根据用户的 <br>
+配置名单来动态切换调度模式。该模式默认开启，开启后请停止使用scene接管调度，以免冲突 <br>
+CS调度并没有自带默认的应用配置名单，因此需要你通过模块安装时安装的CSController应用来 <br>
+对每个应用进行配置，否则默认为balance模式
+
+### CSController的使用
+CSController的作用已经削减，目前仅作为配置应用名单来使用，在进入软件后， <br>
+只需要使用应用配置功能，其他功能要么失去作用，要么影响模块运行，在下个版本 <br>
+会对CSController进行重构，仅保留必需功能
+
 ## 常见问题
 Q：是否对待机功耗有负面影响？<br>
 A：CS调度的实现做了不少低功耗的优化，得益于C++语言所以自身运行的功耗开销很低。 <br>
@@ -57,6 +68,8 @@ A: 开启CS调度的Feas开关 切换为极速模式 CS调度会自动识别是�
    Load_balancing = false
    Disable_UFS_clock_gate = false
    TouchBoost = false
+   Dynamic_response = true
+
 ```
 | 字段名   | 数据类型 | 描述                                           |
 | -------- | -------- | ---------------------------------------------- |
@@ -70,6 +83,7 @@ A: 开启CS调度的Feas开关 切换为极速模式 CS调度会自动识别是�
 | Disable_UFS_clock_gate | bool   | 开启后将在性能模式和极速模式关闭UFS时钟门 关闭后将会减少I/O资源消耗 提高耗电和性能 PS:省电模式和均衡模式因为功耗影响默认开启UFS时钟门 |
 | TouchBoost | bool   | 开启后将启用内核的触摸升频 PS:触摸升频 不推荐日用党开启 |
 | CFS_Scheduler | bool   | 开启后将优化完全公平调度器的参数 PS:5.15内核不需要开启 |
+| Dynamic_response | boot |默认开启，开启后请不要使用scene接管调度，这个功能可以让cs调度自己接管调度控制，不需要scene |
 ```
 在CS启动时会读取`switchInode`对应路径的文件获取默认性能模式,在日志以如下方式体现：  
 2024-08-11 11:22:37] 更换模式为性能模式
@@ -84,7 +98,7 @@ echo "powersave" > /sdcard/Android/MW_CpuSpeedController/log.txt
 # 致谢 （排名不分前后）
 感谢以下用户对本项目的帮助：  
 - [CoolAPK@ztc1997](https://github.com/ztc1997) <br>
-- [CoolAPK@XShe](https://github.com/xsheeee) <br>
+- [CoolAPK@XShe](https://github.com/XShePlus) <br>
 - [CoolAPK@Timeline](https://github.com/nep-Timeline) <br>
 - [CoolAPK@RalseiNEO](https://github.com/ButRalsei) <br>
 - QQ@长虹久奕 

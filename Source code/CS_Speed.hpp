@@ -44,7 +44,7 @@ public:
         DisableUFSclockgate = reader.GetBoolean("meta", "Disable_UFS_clock_gate", false);
         TouchBoost = reader.GetBoolean("meta", "Touch_Boost", false);
         CFSscheduler = reader.GetBoolean("meta", "CFS_Scheduler", false);
-        Dynamic_response = reader.GetBoolean("meta", "Dynamic_response", false);
+        Dynamic_response = reader.GetBoolean("meta", "Dynamic_response", true);
     }
     bool checkTouchBoost_path() {
         return access(Touch_Boost_path.c_str(), F_OK) == 0;
