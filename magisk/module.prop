@@ -1,6 +1,6 @@
 id=MW_CpuSpeedController
 name=CS调度
-versionCode=202410271337
+versionCode=1730814270
 version=v10.0.0
 author=MoWei
 description=适用于A12-A15 Kernel5.10-5.15的schedhorizon调度模块

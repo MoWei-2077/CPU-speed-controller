@@ -98,6 +98,7 @@ private:
     void mainControlFunction() {
         std::string out;
         while (true) {
+            utils.log("启动成功");
             utils.InotifyMain("/dev/cpuset/top-app/cgroup.procs", IN_MODIFY);
             // 自动堵塞
             out = runCommand(getTopPackage);
