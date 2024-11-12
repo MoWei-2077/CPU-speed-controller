@@ -1,13 +1,10 @@
 #include "CS_Speed.hpp"
-#include "Controller.hpp"
-
 int main() {
     std::string line;
 
     Utils utils;
     CS_Speed csspeed;
     Config config;
-    Controller controller;
     
     utils.clear_log();// 先清理日志 否则无法正确抛出错误
     usleep(500 * 1000); // 先等待一会 部分设备这个时候还在insmod schedhorizon.ko中
@@ -21,9 +18,8 @@ int main() {
     csspeed.load_balancing();
     csspeed.EAS_Scheduler();
     csspeed.CFS_Scheduler();    
-    csspeed.Touchboost();
+    csspeed.Input_Boost();
     csspeed.config_mode();
-    controller.bootFunction();
     while (true) {
             utils.InotifyMain("/sdcard/Android/MW_CpuSpeedController/config.txt", IN_MODIFY); // 检测配置文件变化
             std::ifstream file = config.Getconfig();
