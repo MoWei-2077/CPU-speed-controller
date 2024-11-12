@@ -83,7 +83,7 @@ CS调度使用的调速器是schedhorizon walt schedutil<br>
 | Core_allocation | bool   | 核心绑定 开启后将会调整应用的CPUSET与绑定线程的CPUSET不产生冲突 例如:A-SOUL和Scene的核心绑定 PS:无脑开启 |
 | Load_balancing | bool   | 开启后将会负载均衡 PS:推荐开启|
 | Disable_UFS_clock_gate | bool   | 开启后将在性能模式和极速模式关闭UFS时钟门 关闭后将会减少I/O资源消耗 提高耗电和性能 PS:省电模式和均衡模式因为功耗影响默认开启UFS时钟门 |
-| InputBoost | bool   | 开启后将创建一个线程去监听触摸事件 当检测到屏幕滑动时进行两秒的临时升频 PS:不推荐日用党开启 |
+| Input_Boost | bool   | 开启后将创建一个线程去监听触摸事件 当检测到屏幕滑动时进行两秒的临时升频 PS:不推荐日用党开启 |
 | CFS_Scheduler | bool   | 开启后将优化完全公平调度器的参数 PS:5.15内核不需要开启 |
 | New_Uclamp_Strategy | bool | 开启后将使用新的uclamp策略 PS:ztc最新测试版推荐开启 |
 | Disable_Detailed_Log | bool | 开启后将关闭模式切换时产生的日志 可以节省一部分电量和性能资源消耗 PS:警告 功能 报错日志不会关闭 |
