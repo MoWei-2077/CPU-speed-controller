@@ -52,8 +52,12 @@ public:
         return access(MTK_path.c_str(), F_OK) == 0;
     }
     void temporary_UpFrequency(){
-        WriteFile(schedhorizon_path + "up_delay", "0");
-        WriteFile(schedhorizon_path + "scaling_min_freq_limit", "1900000");
+        for (int i = 0; i <= 7; ++i) {
+            const std::string up_delayPath = "/sys/devices/system/cpu/cpufreq/policy" + std::to_string(i) + "/schedhorizon/up_delay";
+            const std::string scaling_min_freq_limit_path = "/sys/devices/system/cpu/cpufreq/policy" + std::to_string(i) + "/scaling_min_freq_limit";
+            WriteFile(up_delayPath, "0"); 
+            WriteFile(scaling_min_freq_limit_path, "2000000");
+        }
     }
     void Input_Boost(){
         if (!InputBoost) {
@@ -63,19 +67,20 @@ public:
     }
     void Inputboost() {
         std::string ID = utils.GetTouchScreenDevice();
-        ssize_t bytes_read;
-        struct input_event ev;
-        int fd = open(ID.c_str(), O_RDONLY | O_NONBLOCK);
-        int is_slide = 0;
-
-        while (true) {
-            utils.InotifyMain(ID.c_str(), IN_ALL_EVENTS);
-              
-              while ((bytes_read = read(fd, &ev, sizeof(struct input_event))) > 0) {
+        //ssize_t bytes_read;
+        //struct input_event ev;
+        //int fd = open(ID.c_str(), O_RDONLY | O_NONBLOCK);
+        //int is_slide = 0;
+          /*  while ((bytes_read = read(fd, &ev, sizeof(struct input_event))) > 0) {
                 if (ev.type == EV_KEY && ev.code == BTN_TOUCH) {
                     if (ev.value == 1) {
-                        if (is_slide == 0 || is_slide != ev.time.tv_sec) {
-                            temporary_UpFrequency();    // 屏幕处于滑动状态进行临时升频
+                        if (is_slide != 0 && is_slide == ev.time.tv_sec) {
+                            // utils.log("屏幕点击，开始临时升频");
+                        } else {
+                            temporary_UpFrequency(); // 屏幕处于滑动状态进行临时升频
+                            if (!DisableDetailedLog){
+                                utils.log("屏幕滑动，开始临时升频");;
+                            }
                         }
                     } else if (ev.value == 0) {
                         config_mode();  // 升频后进行降频操作
@@ -86,6 +91,13 @@ public:
             sleep(2); // 长时间进行遍历和ioctl操作会造成高功耗
         }
         close(fd);
+        */
+        while (true) {
+            config_mode();
+            utils.InotifyMain(ID.c_str(), IN_ALL_EVENTS);
+            temporary_UpFrequency();
+            sleep(2);
+        }       
     }
 
     void config_mode() {
@@ -94,14 +106,11 @@ public:
         while (std::getline(file, line)) {
             if (line == "powersave") {
                 powersave();
-            }
-            if (line == "balance") {
+            } else if (line == "balance") {
                 balance();
-            }
-            if (line == "performance") {
+            } else if (line == "performance") {
                 performance();
-            }
-            if (line == "fast") {
+            } else if (line == "fast") {
                 fast();
             }
         }
@@ -111,13 +120,12 @@ public:
 
         if (fd < 0) {
             chmod(filePath.c_str(), 0666);
-            fd = open(filePath.c_str(), O_WRONLY | O_NONBLOCK); // 如果写入失败将会授予0666权限
+            fd = open(filePath.c_str(), O_WRONLY | O_NONBLOCK); 
         }
 
         if (fd >= 0) {
             write(fd, content.data(), content.size());
-            close(fd); // 写入成功后关闭文件 授予0444权限
-            chmod(filePath.c_str(), 0444);
+            close(fd);
         }
     }
     void walt(){
@@ -191,13 +199,11 @@ public:
             WriteFile(Scheduler_path + "sched_migration_cost_ns", "5000000");
             WriteFile(Scheduler_path + "sched_min_granularity_ns", "12500000");
             utils.log("CFS调度器参数已调整完毕");
-        } 
-        else if (check_Spare_CFS_scheduler()){
+        } else if (check_Spare_CFS_scheduler()){
             WriteFile("/sys/kernel/debug/sched/migration_cost_ns", "5000000");
             WriteFile("/sys/kernel/debug/sched/wakeup_granularity_ns", "12500000");
             utils.log("CFS调度器参数已调整完毕");
-        } 
-        else{
+        } else{
             utils.log("警告:您的设备不支持CFS调度器 请询问内核开发者解决问题");
         }
     }
@@ -210,7 +216,7 @@ public:
             WriteFile(Scheduler_path + "sched_schedstats", "0"); // 禁用调度统计信息收集
             WriteFile(Scheduler_path + "sched_energy_aware", "1"); // 启用EAS调度器
             utils.log("EAS调度器已启用 参数已调整完毕");
-        }else{
+        } else {
             utils.log("警告:您的设备不存在EAS调度器 请询问内核开发者解决问题");
         }
     }
@@ -232,8 +238,7 @@ public:
     void Feasdisable() { // Feas可能会导致日常卡顿 所以在日常中需要进行关闭Feas
         if (checkqcomFeas()) {
             WriteFile("/sys/module/perfmgr/parameters/perfmgr_enable", "0");
-        }
-        else if (checkMTKFeas()) {
+        }else if (checkMTKFeas()) {
             WriteFile("/sys/module/mtk_fpsgo/parameters/perfmgr_enable", "0");
         } 
     }
@@ -241,11 +246,10 @@ public:
         if (checkqcomFeas()) {
             utils.log("高通设备:Feas已启用"); // Feas已启用
             WriteFile("/sys/module/perfmgr/parameters/perfmgr_enable", "1");
-        }
-        else if (checkMTKFeas()) {
+        } else if (checkMTKFeas()) {
             utils.log("联发科设备:Feas已启用");
             WriteFile("/sys/module/mtk_fpsgo/parameters/perfmgr_enable", "1");
-        }else{
+        }else {
             utils.log("警告:您的设备不支持Feas 请检查您设备是否拥有Perfmgr内核模块或没有FPSGO内核模块目前将不会调整任何模式请更换模式");        
         }
     }
@@ -257,7 +261,7 @@ public:
 
         WriteFile(schedhorizon_path + "efficient_freq", "1500000");
         WriteFile(schedhorizon_path + "up_delay", "50");
-        WriteFile(schedhorizon_path + "scaling_min_freq_limit", "1000000");
+        WriteFile("/sys/devices/system/cpu/cpufreq/policy0/scaling_min_freq_limit", "1000000");
 
         /*
           当系统试图将 CPU 核心的频率设置得比 scaling_min_freq_limit 更低时，
@@ -269,8 +273,6 @@ public:
             const std::string up_delayPath = "/sys/devices/system/cpu/cpufreq/policy" + std::to_string(i) + "/schedhorizon/up_delay";
             const std::string filePath = "/sys/devices/system/cpu/cpufreq/policy" + std::to_string(i) + "/schedhorizon/efficient_freq";
             const std::string scaling_min_freq_limit_path = "/sys/devices/system/cpu/cpufreq/policy" + std::to_string(i) + "/scaling_min_freq_limit";
-            const std::string down_rate_limit_us_path = "/sys/devices/system/cpu/cpu" + std::to_string(i) + "/cpufreq/schedhorizon/down_rate_limit_us";
-            const std::string up_rate_limit_us_path = "/sys/devices/system/cpu/cpu" + std::to_string(i) + "/cpufreq/schedhorizon/up_rate_limit_us";
             WriteFile(filePath, frequencies);
             WriteFile(up_delayPath, efficient_freq); 
             WriteFile(scaling_min_freq_limit_path, "1000000");
@@ -282,8 +284,6 @@ public:
             const std::string up_delayPath6_7 = "/sys/devices/system/cpu/cpufreq/policy" + std::to_string(i) + "/schedhorizon/up_delay";
             const std::string filePath6_7 = "/sys/devices/system/cpu/cpufreq/policy" + std::to_string(i) + "/schedhorizon/efficient_freq";
             const std::string scaling_min_freq_limit_path6_7 = "/sys/devices/system/cpu/cpufreq/policy" + std::to_string(i) + "/scaling_min_freq_limit";
-            const std::string down_rate_limit_us_path6_7 = "/sys/devices/system/cpu/cpu" + std::to_string(i) + "/cpufreq/schedhorizon/down_rate_limit_us";
-            const std::string up_rate_limit_us_path6_7 = "/sys/devices/system/cpu/cpu" + std::to_string(i) + "/cpufreq/schedhorizon/up_rate_limit_us";
             WriteFile(filePath6_7, frequencies6_7);
             WriteFile(up_delayPath6_7, efficient_freq6_7);
             WriteFile(scaling_min_freq_limit_path6_7, "900000");
@@ -311,7 +311,7 @@ public:
 
         WriteFile(schedhorizon_path + "efficient_freq", "1700000");
         WriteFile(schedhorizon_path + "up_delay", "30");
-        WriteFile(schedhorizon_path + "scaling_min_freq_limit", "1400000");
+        WriteFile("/sys/devices/system/cpu/cpufreq/policy0/scaling_min_freq_limit", "1400000");
 
         const std::string frequencies = "1400000 1700000 2000000 2500000";
         const std::string efficient_freq = "50 100 100 150";
@@ -319,10 +319,6 @@ public:
             const std::string up_delayPath = "/sys/devices/system/cpu/cpufreq/policy" + std::to_string(i) + "/schedhorizon/up_delay";
             const std::string filePath = "/sys/devices/system/cpu/cpufreq/policy" + std::to_string(i) + "/schedhorizon/efficient_freq";
             const std::string scaling_min_freq_limit_path = "/sys/devices/system/cpu/cpufreq/policy" + std::to_string(i) + "/scaling_min_freq_limit";
-            const std::string down_rate_limit_us_path = "/sys/devices/system/cpu/cpu" + std::to_string(i) + "/cpufreq/schedhorizon/down_rate_limit_us";
-            const std::string up_rate_limit_us_path = "/sys/devices/system/cpu/cpu" + std::to_string(i) + "/cpufreq/schedhorizon/up_rate_limit_us";
-            const std::string scaling_min_freq = "/sys/devices/system/cpu/cpufreq/policy" + std::to_string(i) + "/scaling_min_freq";
-            const std::string scaling_max_freq = "/sys/devices/system/cpu/cpufreq/policy" + std::to_string(i) + "/scaling_max_freq";
             WriteFile(filePath, frequencies);
             WriteFile(up_delayPath, efficient_freq);
             WriteFile(scaling_min_freq_limit_path, "1200000");
@@ -334,10 +330,6 @@ public:
             const std::string up_delayPath6_7 = "/sys/devices/system/cpu/cpufreq/policy" + std::to_string(i) + "/schedhorizon/up_delay";
             const std::string filePath6_7 = "/sys/devices/system/cpu/cpufreq/policy" + std::to_string(i) + "/schedhorizon/efficient_freq";
             const std::string scaling_min_freq_limit_path6_7 = "/sys/devices/system/cpu/cpufreq/policy" + std::to_string(i) + "/scaling_min_freq_limit";
-            const std::string down_rate_limit_us_path6_7 = "/sys/devices/system/cpu/cpu" + std::to_string(i) + "/cpufreq/schedhorizon/down_rate_limit_us";
-            const std::string up_rate_limit_us_path6_7 = "/sys/devices/system/cpu/cpu" + std::to_string(i) + "/cpufreq/schedhorizon/up_rate_limit_us";
-            const std::string scaling_min_freq = "/sys/devices/system/cpu/cpufreq/policy" + std::to_string(i) + "/scaling_min_freq";
-            const std::string scaling_max_freq = "/sys/devices/system/cpu/cpufreq/policy" + std::to_string(i) + "/scaling_max_freq";
             WriteFile(filePath6_7, frequencies);
             WriteFile(up_delayPath6_7, efficient_freq);
             WriteFile(scaling_min_freq_limit_path6_7, "1200000");
@@ -363,9 +355,9 @@ public:
         }
         schedhorizon();
         
-        WriteFile(schedhorizon_path + "efficient_freq", "0"); // 不进行频率限制
+        WriteFile(schedhorizon_path + "efficient_freq", "0"); 
         WriteFile(schedhorizon_path + "up_delay", "10");
-        WriteFile(schedhorizon_path + "scaling_min_freq_limit", "1700000");
+        WriteFile("/sys/devices/system/cpu/cpufreq/policy0/scaling_min_freq_limit", "1700000");
 
         /*
           当系统试图将 CPU 核心的频率设置得比 scaling_min_freq_limit 更低时，
@@ -378,8 +370,6 @@ public:
             const std::string up_delayPath = "/sys/devices/system/cpu/cpufreq/policy" + std::to_string(i) + "/schedhorizon/up_delay";
             const std::string filePath = "/sys/devices/system/cpu/cpufreq/policy" + std::to_string(i) + "/schedhorizon/efficient_freq";
             const std::string scaling_min_freq_limit_path = "/sys/devices/system/cpu/cpufreq/policy" + std::to_string(i) + "/scaling_min_freq_limit";
-            const std::string down_rate_limit_us_path = "/sys/devices/system/cpu/cpu" + std::to_string(i) + "/cpufreq/schedhorizon/down_rate_limit_us";
-            const std::string up_rate_limit_us_path = "/sys/devices/system/cpu/cpu" + std::to_string(i) + "/cpufreq/schedhorizon/up_rate_limit_us";
             WriteFile(filePath, frequencies);
             WriteFile(up_delayPath, efficient_freq);
             WriteFile(scaling_min_freq_limit_path, "2000000");
@@ -391,8 +381,6 @@ public:
             const std::string up_delayPath6_7 = "/sys/devices/system/cpu/cpufreq/policy" + std::to_string(i) + "/schedhorizon/up_delay";
             const std::string filePath6_7 = "/sys/devices/system/cpu/cpufreq/policy" + std::to_string(i) + "/schedhorizon/efficient_freq";
             const std::string scaling_min_freq_limit_path6_7 = "/sys/devices/system/cpu/cpufreq/policy" + std::to_string(i) + "/scaling_min_freq_limit";
-            const std::string down_rate_limit_us_path6_7 = "/sys/devices/system/cpu/cpu" + std::to_string(i) + "/cpufreq/schedhorizon/down_rate_limit_us";
-            const std::string up_rate_limit_us_path6_7 = "/sys/devices/system/cpu/cpu" + std::to_string(i) + "/cpufreq/schedhorizon/up_rate_limit_us";
             WriteFile(filePath6_7, frequencies);
             WriteFile(up_delayPath6_7, efficient_freq);
             WriteFile(scaling_min_freq_limit_path6_7, "1800000");
@@ -419,15 +407,13 @@ public:
     }
 
     void fast() {
-        if (enableFeas) {
-            reset(); 
-            EnableFeas();
-        }else{
-            if (!DisableDetailedLog){
-                utils.log("极速模式已切换");
-            }
-            reset();
+        if (!DisableDetailedLog){
+            utils.log("极速模式已切换");
         }
+        if (enableFeas) {
+            EnableFeas();
+        }
+        reset();
     }
       
     void core_allocation() {

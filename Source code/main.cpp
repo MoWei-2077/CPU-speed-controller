@@ -1,6 +1,5 @@
 #include "CS_Speed.hpp"
 int main() {
-    std::string line;
 
     Utils utils;
     CS_Speed csspeed;
@@ -21,22 +20,8 @@ int main() {
     csspeed.Input_Boost();
     csspeed.config_mode();
     while (true) {
-            utils.InotifyMain("/sdcard/Android/MW_CpuSpeedController/config.txt", IN_MODIFY); // 检测配置文件变化
-            std::ifstream file = config.Getconfig();
-        while (std::getline(file, line)) {
-            if (line == "powersave") {
-                csspeed.powersave();
-            }
-            if (line == "balance") {
-                 csspeed.balance();
-            }
-            if (line == "performance") {
-                csspeed.performance();
-            }
-            if (line == "fast") {
-                csspeed.fast();
-            }
-        }
+        utils.InotifyMain("/sdcard/Android/MW_CpuSpeedController/config.txt", IN_MODIFY); // 检测配置文件变化
+        csspeed.config_mode();
     }
     return 0;
 }
