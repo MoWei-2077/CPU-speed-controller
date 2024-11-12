@@ -2,10 +2,10 @@
 [![C++](https://img.shields.io/badge/language-C++-%23f34b7d.svg?style=plastic)](https://en.wikipedia.org/wiki/C++)
 [![Android](https://img.shields.io/badge/platform-Android-0078d7.svg?style=plastic)](https://en.wikipedia.org/wiki/Android_(operating_system)) 
 [![AArch64](https://img.shields.io/badge/arch-AArch64-red.svg?style=plastic)](https://en.wikipedia.org/wiki/AArch64)
-[![Android Support12-14](https://img.shields.io/badge/Android%2012~14-Support-green)](https://img.shields.io/badge/Android%2012~14-Support-green)
+[![Android Support12-15](https://img.shields.io/badge/Android%2012~14-Support-green)](https://img.shields.io/badge/Android%2012~15-Support-green)
 #### 介绍
 1.该项目是基于C++进行编写的一款智能CPU调度 <br>
-2.该调度依赖于schedhorizon调速器和EAS调度器 <br>
+2.该调度依赖于schedhorizon调速器和EAS调度器与CFS调度器 <br>
 3.该调度为ZTC内核专属调度 当然别的内核也能用 但效果不如ztc内核
 
 #### 工作条件
@@ -23,13 +23,9 @@
 powersave 省电模式 保证基本流畅的同时尽可能降低功耗 推荐日常使用 <br>
 balance均衡模式，比原厂略流畅的同时略省电 推荐日常使用 <br>
 performance性能模式，保证费电的同时多一点流畅度 推荐游戏使用 <br>
-fast极速模式，默认官调 如果开启了Feas开关将会启用Feas
-
-### 动态响应功能
-自CS调度10.0版本开始，CS调度引入了Dynamic_response(动态响应)或者说自身切换功能，将根据用户的 <br>
-配置名单来动态切换调度模式。该模式默认开启，开启后请停止使用scene接管调度，以免冲突 <br>
-CS调度并没有自带默认的应用配置名单，因此需要你通过模块安装时安装的CSController应用来 <br>
-对每个应用进行配置，否则默认为balance模式
+- fast极速模式
+- 高通设备切换极速模式时将使用walt调速器并优化walt调速器的参数 以保证获取更加稳定的游戏体验 PS:可能会带来一部分的功耗提升 <br>
+-联发科设备切换极速模式时将使用schedutil调速器 平衡功耗的同时保证流畅 PS:CS调度不会对schedutil调速器的参数进行任何调整 <br>
 
 ### CSController的使用
 CSController的作用已经削减，目前仅作为配置应用名单来使用，在进入软件后， <br>
@@ -49,26 +45,32 @@ Q: 是否需要调整EAS调度器？ <br>
 A: CS调度在8.0版本会自动调整EAS调度器的参数,无需用户自行调整。 <br>
 Q: 我该如何确保我的设备拥有Perfmgr内核模块？ <br>
 A: 开启CS调度的Feas开关 切换为极速模式 CS调度会自动识别是否拥有Perfmgr内核模块 如果有将开启Feas 如果没有将会抛出错误在日志中 PS:如果需要Feas推荐刷入VK内核 目前CS调度已接入VK内核的Feas功能。
-## 详细介绍 
-该模块使用的调速器是schedhorizon performance<br>
-所以在部分场景中得益于schedhorizon调速器会比Powersave调速器拥有更快的响应速度、性能稳定性或资源利用率。适当的调度策略可以确保系统在不同负载下的表现良好 <br>
-在游戏场景中开启schedutil调速器 平衡功耗的同时保证流畅 <br>
-废话不多说进入本篇的重点 配置文档
 
+## 触摸信号识别
+本调度采用了跟安卓系统框架获取触摸信号一样的方式，使用Inotify监听位于/dev/input的设备，当触摸发生变化时将解析来自触摸屏的报点信息，可以获取到最基本的手指触摸到屏幕和手指离开屏幕的事件。根据一段连续的报点信息可以得到手指滑动的距离以及离开屏幕时末端速度，由此可以推断是点击操作还是滑动操作。
+
+## 详细介绍 
+CS调度使用的调速器是schedhorizon walt schedutil<br>
+所以在部分场景中得益于schedhorizon调速器会比Powersave调速器拥有更快的响应速度、性能稳定性或资源利用率。适当的调度策略可以确保系统在不同负载下的表现良好 <br>
+与其他用户态性能控制器不同的是，CS没有Java层的部分，只有Native层的主动采样，这也就没有了系统框架层面的依赖。它的修改范围涵盖了所有内核态性能控制能够做到的，也就是说不用换掉没啥bug的官方内核，就能使用InputBoost等花式Boost。
+废话不多说进入本篇的重点 配置文档
 ### 自定义配置文件
 ### 元信息
 
 ```ini
    [meta]
-   name = "CS调度配置文件V4.0"
+   name = "CS调度配置文件V5.0"
    author = "CoolApk@MoWei"
    Enable_Feas = false
    Disable_qcom_GpuBoost = false
    Core_allocation = false
    Load_balancing = false
    Disable_UFS_clock_gate = false
-   TouchBoost = false
-   Dynamic_response = true
+   InputBoost = false
+   CFS_Scheduler = false
+   New_Uclamp_Strategy = false
+   Disable_Detailed_Log = false
+
 
 ```
 | 字段名   | 数据类型 | 描述                                           |
@@ -79,11 +81,12 @@ A: 开启CS调度的Feas开关 切换为极速模式 CS调度会自动识别是�
 | Enable_Feas | bool   | 开启此功能后再开启极速模式就会恢复schedutil调速器再开启Feas |
 | Disable_qcom_GpuBoost | bool   | 开启后将会关闭高通的GPUBoost 防止GPUBoost乱升频 PS:推荐降压后开启 |
 | Core_allocation | bool   | 核心绑定 开启后将会调整应用的CPUSET与绑定线程的CPUSET不产生冲突 例如:A-SOUL和Scene的核心绑定 PS:无脑开启 |
-| Load_balancing | bool   | 开启后将会平衡负载 PS:推荐开启|
+| Load_balancing | bool   | 开启后将会负载均衡 PS:推荐开启|
 | Disable_UFS_clock_gate | bool   | 开启后将在性能模式和极速模式关闭UFS时钟门 关闭后将会减少I/O资源消耗 提高耗电和性能 PS:省电模式和均衡模式因为功耗影响默认开启UFS时钟门 |
-| TouchBoost | bool   | 开启后将启用内核的触摸升频 PS:触摸升频 不推荐日用党开启 |
+| InputBoost | bool   | 开启后将创建一个线程去监听触摸事件 当检测到屏幕滑动时进行两秒的临时升频 PS:不推荐日用党开启 |
 | CFS_Scheduler | bool   | 开启后将优化完全公平调度器的参数 PS:5.15内核不需要开启 |
-| Dynamic_response | boot |默认开启，开启后请不要使用scene接管调度，这个功能可以让cs调度自己接管调度控制，不需要scene |
+| New_Uclamp_Strategy | bool | 开启后将使用新的uclamp策略 PS:ztc最新测试版推荐开启 |
+| Disable_Detailed_Log | bool | 开启后将关闭模式切换时产生的日志 可以节省一部分电量和性能资源消耗 PS:警告 功能 报错日志不会关闭 |
 ```
 在CS启动时会读取`switchInode`对应路径的文件获取默认性能模式,在日志以如下方式体现：  
 2024-08-11 11:22:37] 更换模式为性能模式
@@ -95,6 +98,15 @@ echo "powersave" > /sdcard/Android/MW_CpuSpeedController/log.txt
 在日志以如下方式体现：
 2024-08-11 11:22:37] 更换模式为省电模式
 
+## 外围改进
+本模块除了CS调度本体的优化，还配合一些外围的改进共同提升用户使用体验。
+- 附加功能
+  - Mi FEAS功能
+  - 关闭Gpu Boost
+  - 调整CPUset的核心绑定功能
+  - 负载均衡
+  - UFS时钟门开关
+  - `walt` `schedhorizon` `schedutil`调速器、`core_ctl`、 `EAS` `CFS`调度器优化
 # 致谢 （排名不分前后）
 感谢以下用户对本项目的帮助：  
 - [CoolAPK@ztc1997](https://github.com/ztc1997) <br>
@@ -105,4 +117,4 @@ echo "powersave" > /sdcard/Android/MW_CpuSpeedController/log.txt
 # 使用的开源项目
 [作者:wme7 项目:INIreader](https://github.com/wme7/INIreader) <br>
 感谢所有用户的测试反馈 这将推进CPU调速器(CS调度)的开发
-### 该文档更新于:2024/10/19 17:32
+### 该文档更新于:2024/11/12 17:03
