@@ -88,10 +88,13 @@ public:
         // https://blog.csdn.net/youthcowboy/article/details/135348079 
         // 联发科:teo 高通:qcom-cpu-lpm
 
-        if (checkMTK_path())
+        if (checkMTK_path()){
+            utils.log("CPUIdle governor已切换为teo");
             WriteFile(CpuIdle_path + "current_governor", "teo");
-        else 
+        } else {
+            utils.log("CPUIdle governor已切换为qcom-cpu-lpm");
             WriteFile(CpuIdle_path + "current_governor", "qcom-cpu-lpm");
+        }
     }
     void walt(){
         if (checkWalt()) {
@@ -101,9 +104,16 @@ public:
             WriteFile(walt_path + "sched_group_upmigrate", "100");
             WriteFile(walt_path + "sched_asymcap_boost", "1");
             WriteFile(walt_path + "sched_force_lb_enable", "1");
-            WriteFile(walt_path + "sched_boost", "3");
+            WriteFile(walt_path + "sched_boost", "0");
         for (int i = 0; i <= 7; ++i) {
                 std::string cpuDir = "/sys/devices/system/cpu/cpufreq/policy" + std::to_string(i) + "/walt/";
+                WriteFile(cpuDir + "up_rate_limit_us", "1000");
+                WriteFile(cpuDir + "down_rate_limit_us", "1000");
+                WriteFile(cpuDir + "adaptive_high_freq", "0");
+                WriteFile(cpuDir + "adaptive_low_freq", "0");
+                WriteFile(cpuDir + "target_loads", "0");
+                WriteFile(cpuDir + "target_load_thresh", "0");
+                WriteFile(cpuDir + "target_load_shift", "3");
                 WriteFile(cpuDir + "rtg_boost_freq", "0");
                 WriteFile(cpuDir + "hispeed_freq", "0");
             }
@@ -135,9 +145,9 @@ public:
         }
         
         if (DisableUFSclockgate){
-            WriteFile("/sys/devices/platform/soc/1d84000.ufshc/clkgate_enable", "0"); 
+                WriteFile("/sys/devices/platform/soc/1d84000.ufshc/clkgate_enable", "0"); 
             }else{
-            WriteFile("/sys/devices/platform/soc/1d84000.ufshc/clkgate_enable", "1"); 
+                WriteFile("/sys/devices/platform/soc/1d84000.ufshc/clkgate_enable", "1"); 
         }
     }
     bool checkWalt(){
@@ -225,7 +235,7 @@ public:
         schedhorizon();
 
         WriteFile(schedhorizon_path + "efficient_freq", "1500000");
-        WriteFile(schedhorizon_path + "up_delay", "60");
+        WriteFile(schedhorizon_path + "up_delay", "50");
         WriteFile("/sys/devices/system/cpu/cpufreq/policy0/scaling_min_freq_limit", "1000000");
 
         /*
@@ -240,11 +250,11 @@ public:
             const std::string scaling_min_freq_limit_path = "/sys/devices/system/cpu/cpufreq/policy" + std::to_string(i) + "/scaling_min_freq_limit";
             WriteFile(filePath, frequencies);
             WriteFile(up_delayPath, efficient_freq); 
-            WriteFile(scaling_min_freq_limit_path, "900000");
+            WriteFile(scaling_min_freq_limit_path, "1000000");
         }
 
         const std::string frequencies6_7 = "1200000 1800000 2300000";
-        const std::string efficient_freq6_7 = "150 500 500";
+        const std::string efficient_freq6_7 = "100 200 300";
         for (int i = 6; i <= 7; ++i) {
             const std::string up_delayPath6_7 = "/sys/devices/system/cpu/cpufreq/policy" + std::to_string(i) + "/schedhorizon/up_delay";
             const std::string filePath6_7 = "/sys/devices/system/cpu/cpufreq/policy" + std::to_string(i) + "/schedhorizon/efficient_freq";
@@ -274,12 +284,12 @@ public:
         }
         schedhorizon();
 
-        WriteFile(schedhorizon_path + "efficient_freq", "1700000");
+        WriteFile(schedhorizon_path + "efficient_freq", "1500000");
         WriteFile(schedhorizon_path + "up_delay", "40");
-        WriteFile("/sys/devices/system/cpu/cpufreq/policy0/scaling_min_freq_limit", "1400000");
+        WriteFile("/sys/devices/system/cpu/cpufreq/policy0/scaling_min_freq_limit", "1300000");
 
-        const std::string frequencies = "1400000 1700000 2000000 2500000";
-        const std::string efficient_freq = "50 100 100 150";
+        const std::string frequencies = "1700000 2000000 2300000";
+        const std::string efficient_freq = "50 100 100";
         for (int i = 1; i <= 5; ++i) {
             const std::string up_delayPath = "/sys/devices/system/cpu/cpufreq/policy" + std::to_string(i) + "/schedhorizon/up_delay";
             const std::string filePath = "/sys/devices/system/cpu/cpufreq/policy" + std::to_string(i) + "/schedhorizon/efficient_freq";
@@ -289,15 +299,15 @@ public:
             WriteFile(scaling_min_freq_limit_path, "1400000");
         }
 
-        const std::string frequencies6_7 = "1200000 1800000 2500000";
-        const std::string efficient_freq6_7 = "50 100 150";
+        const std::string frequencies6_7 = "1800000 2300000";
+        const std::string efficient_freq6_7 = "50 100";
         for (int i = 6; i <= 7; ++i) {
             const std::string up_delayPath6_7 = "/sys/devices/system/cpu/cpufreq/policy" + std::to_string(i) + "/schedhorizon/up_delay";
             const std::string filePath6_7 = "/sys/devices/system/cpu/cpufreq/policy" + std::to_string(i) + "/schedhorizon/efficient_freq";
             const std::string scaling_min_freq_limit_path6_7 = "/sys/devices/system/cpu/cpufreq/policy" + std::to_string(i) + "/scaling_min_freq_limit";
             WriteFile(filePath6_7, frequencies);
             WriteFile(up_delayPath6_7, efficient_freq);
-            WriteFile(scaling_min_freq_limit_path6_7, "1200000");
+            WriteFile(scaling_min_freq_limit_path6_7, "1600000");
         if (UclampStrategy){
             WriteFile(top_app_cpuctl + "cpu.uclamp.min.multiplier", "0.3");
             WriteFile(foreground_cpuctl + "cpu.uclamp.min.multiplier", "0.3");
@@ -322,26 +332,26 @@ public:
         
         WriteFile(schedhorizon_path + "efficient_freq", "0"); 
         WriteFile(schedhorizon_path + "up_delay", "10");
-        WriteFile("/sys/devices/system/cpu/cpufreq/policy0/scaling_min_freq_limit", "1700000");
+        WriteFile("/sys/devices/system/cpu/cpufreq/policy0/scaling_min_freq_limit", "1500000");
 
         /*
           当系统试图将 CPU 核心的频率设置得比 scaling_min_freq_limit 更低时，
           实际设置的 scaling_min_freq 值会等于 scaling_min_freq_limit
         */
 
-        const std::string frequencies = "1400000 1700000 2000000 2500000";
-        const std::string efficient_freq = "50 50 50 100";
+        const std::string frequencies = "1700000 2000000 2500000";
+        const std::string efficient_freq = "50 50 50";
         for (int i = 1; i <= 5; ++i) {
             const std::string up_delayPath = "/sys/devices/system/cpu/cpufreq/policy" + std::to_string(i) + "/schedhorizon/up_delay";
             const std::string filePath = "/sys/devices/system/cpu/cpufreq/policy" + std::to_string(i) + "/schedhorizon/efficient_freq";
             const std::string scaling_min_freq_limit_path = "/sys/devices/system/cpu/cpufreq/policy" + std::to_string(i) + "/scaling_min_freq_limit";
             WriteFile(filePath, frequencies);
             WriteFile(up_delayPath, efficient_freq);
-            WriteFile(scaling_min_freq_limit_path, "1800000");
+            WriteFile(scaling_min_freq_limit_path, "1700000");
         }
 
-        const std::string frequencies6_7 = "1400000 1800000 2500000";
-        const std::string efficient_freq6_7 = "50 100 150";
+        const std::string frequencies6_7 = "0";
+        const std::string efficient_freq6_7 = "0";
         for (int i = 6; i <= 7; ++i) {
             const std::string up_delayPath6_7 = "/sys/devices/system/cpu/cpufreq/policy" + std::to_string(i) + "/schedhorizon/up_delay";
             const std::string filePath6_7 = "/sys/devices/system/cpu/cpufreq/policy" + std::to_string(i) + "/schedhorizon/efficient_freq";
@@ -350,8 +360,8 @@ public:
             WriteFile(up_delayPath6_7, efficient_freq);
             WriteFile(scaling_min_freq_limit_path6_7, "1800000");
         if (UclampStrategy){
-            WriteFile(top_app_cpuctl + "cpu.uclamp.min.multiplier", "0.45");
-            WriteFile(foreground_cpuctl + "cpu.uclamp.min.multiplier", "0.45");
+            WriteFile(top_app_cpuctl + "cpu.uclamp.min.multiplier", "0.5");
+            WriteFile(foreground_cpuctl + "cpu.uclamp.min.multiplier", "0.5");
         } else {
             WriteFile(top_app_cpuctl + "cpu.uclamp.min", "0");
             WriteFile(top_app_cpuctl + "cpu.uclamp.max", "max");
@@ -421,6 +431,11 @@ public:
             WriteFile("/sys/class/kgsl/kgsl-3d0/max_pwrlevel", "0");
             WriteFile("/sys/class/kgsl/kgsl-3d0/thermal_pwrlevel", "0");   
             WriteFile("/sys/class/kgsl/kgsl-3d0/throttling", "0");
+            WriteFile("/sys/class/kgsl/kgsl-3d0/force_bus_on", "0");
+            WriteFile("/sys/class/kgsl/kgsl-3d0/force_clk_on", "0");
+            WriteFile("/sys/class/kgsl/kgsl-3d0/force_no_nap", "0");
+            WriteFile("/sys/class/kgsl/kgsl-3d0/force_rail_on", "0");
+            WriteFile("/sys/class/kgsl/kgsl-3d0/force_bus_on", "0");              
         }
     }
 };
