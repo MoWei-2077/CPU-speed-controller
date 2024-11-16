@@ -46,27 +46,23 @@ A: CS调度在8.0版本会自动调整EAS调度器的参数,无需用户自行�
 Q: 我该如何确保我的设备拥有Perfmgr内核模块？ <br>
 A: 开启CS调度的Feas开关 切换为极速模式 CS调度会自动识别是否拥有Perfmgr内核模块 如果有将开启Feas 如果没有将会抛出错误在日志中 PS:如果需要Feas推荐刷入VK内核 目前CS调度已接入VK内核的Feas功能。
 
-## 触摸信号识别
-本调度采用了跟安卓系统框架获取触摸信号一样的方式，使用Inotify监听位于/dev/input的设备，当触摸发生变化时将解析来自触摸屏的报点信息，可以获取到最基本的手指触摸到屏幕和手指离开屏幕的事件。根据一段连续的报点信息可以得到手指滑动的距离以及离开屏幕时末端速度，由此可以推断是点击操作还是滑动操作。
-
 ## 详细介绍 
 CS调度使用的调速器是schedhorizon walt schedutil<br>
 所以在部分场景中得益于schedhorizon调速器会比Powersave调速器拥有更快的响应速度、性能稳定性或资源利用率。适当的调度策略可以确保系统在不同负载下的表现良好 <br>
-与其他用户态性能控制器不同的是，CS没有Java层的部分，只有Native层的主动采样，这也就没有了系统框架层面的依赖。它的修改范围涵盖了所有内核态性能控制能够做到的，也就是说不用换掉没啥bug的官方内核，就能使用InputBoost等花式Boost。
 废话不多说进入本篇的重点 配置文档
 ### 自定义配置文件
 ### 元信息
 
 ```ini
    [meta]
-   name = "CS调度配置文件V5.0"
+   name = "CS调度配置文件V6.0"
    author = "CoolApk@MoWei"
    Enable_Feas = false
    Disable_qcom_GpuBoost = false
    Core_allocation = false
    Load_balancing = false
    Disable_UFS_clock_gate = false
-   InputBoost = false
+   Adj_CpuIdle = false
    CFS_Scheduler = false
    New_Uclamp_Strategy = false
    Disable_Detailed_Log = false
@@ -83,7 +79,7 @@ CS调度使用的调速器是schedhorizon walt schedutil<br>
 | Core_allocation | bool   | 核心绑定 开启后将会调整应用的CPUSET与绑定线程的CPUSET不产生冲突 例如:A-SOUL和Scene的核心绑定 PS:无脑开启 |
 | Load_balancing | bool   | 开启后将会负载均衡 PS:推荐开启|
 | Disable_UFS_clock_gate | bool   | 开启后将在性能模式和极速模式关闭UFS时钟门 关闭后将会减少I/O资源消耗 提高耗电和性能 PS:省电模式和均衡模式因为功耗影响默认开启UFS时钟门 |
-| Input_Boost | bool   | 开启后将创建一个线程去监听触摸事件 当检测到屏幕滑动时进行两秒的临时升频 PS:不推荐日用党开启 |
+| Adj_CpuIdle | bool   | 开启后将调整CpuIdle 联发科设备使用:teo 高通设备使用:qcom-cpu-lpm PS:开启后会优化待机功耗 |
 | CFS_Scheduler | bool   | 开启后将优化完全公平调度器的参数 PS:5.15内核不需要开启 |
 | New_Uclamp_Strategy | bool | 开启后将使用新的uclamp策略 PS:ztc最新测试版推荐开启 |
 | Disable_Detailed_Log | bool | 开启后将关闭模式切换时产生的日志 可以节省一部分电量和性能资源消耗 PS:警告 功能 报错日志不会关闭 |
@@ -106,6 +102,7 @@ echo "powersave" > /sdcard/Android/MW_CpuSpeedController/log.txt
   - 调整CPUset的核心绑定功能
   - 负载均衡
   - UFS时钟门开关
+  - CPUIDLE优化
   - `walt` `schedhorizon` `schedutil`调速器、`core_ctl`、 `EAS` `CFS`调度器优化
 # 致谢 （排名不分前后）
 感谢以下用户对本项目的帮助：  
@@ -117,4 +114,4 @@ echo "powersave" > /sdcard/Android/MW_CpuSpeedController/log.txt
 # 使用的开源项目
 [作者:wme7 项目:INIreader](https://github.com/wme7/INIreader) <br>
 感谢所有用户的测试反馈 这将推进CPU调速器(CS调度)的开发
-### 该文档更新于:2024/11/12 17:03
+### 该文档更新于:2024/11/16 16:33
