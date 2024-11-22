@@ -79,6 +79,7 @@ public:
         if (fd >= 0) {
             write(fd, content.data(), content.size());
             close(fd);
+            chmod(filePath.c_str(), 0444);
         }
     }
     void CpuIdle(){
@@ -86,11 +87,11 @@ public:
             return;
             
         // https://blog.csdn.net/youthcowboy/article/details/135348079 
-        // 联发科:teo 高通:qcom-cpu-lpm
+        // 联发科:menu 高通:qcom-cpu-lpm
 
         if (checkMTK_path()){
-            utils.log("CPUIdle governor已切换为teo");
-            WriteFile(CpuIdle_path + "current_governor", "teo");
+            utils.log("CPUIdle governor已切换为menu");
+            WriteFile(CpuIdle_path + "current_governor", "menu");
         } else {
             utils.log("CPUIdle governor已切换为qcom-cpu-lpm");
             WriteFile(CpuIdle_path + "current_governor", "qcom-cpu-lpm");
