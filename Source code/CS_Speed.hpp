@@ -13,6 +13,7 @@ private:
     bool Cpuidle;
     bool UclampStrategy;
     bool DisableDetailedLog;
+    bool Disable_schedtune_boost;
     Utils utils;
     Config config;
     INIReader reader;
@@ -22,8 +23,10 @@ private:
     const std::string system_background_cpuset = "/dev/cpuset/system-background/cpus"; // 系统的后台应用
     const std::string foreground_cpuset = "/dev/cpuset/foreground/cpus"; // 前台的应用
     const std::string top_app_cpuset = "/dev/cpuset/top-app/cpus"; // 顶层应用
+    const std::string restricted_cpuset = "/dev/cpuset/restricted/cpus"; 
     const std::string top_app_cpuctl = "/dev/cpuctl/top-app/";
     const std::string foreground_cpuctl = "/dev/cpuctl/foreground/";
+    const std::string stune_path = "/dev/setune/";
     const std::string Scheduler_path = "/proc/sys/kernel/";
     const std::string walt_path = "/proc/sys/walt/";
     const std::string CpuIdle_path = "/sys/devices/system/cpu/cpuidle/"; // CPU idle
@@ -48,6 +51,7 @@ public:
         CFSscheduler = reader.GetBoolean("meta", "CFS_Scheduler", false);
         UclampStrategy = reader.GetBoolean("meta", "New_Uclamp_Strategy", false);
         DisableDetailedLog = reader.GetBoolean("meta", "Disable_Detailed_Log", false);
+        Disable_schedtune_boost = reader.GetBoolean("meta", "Disable_Schedtune_boost", false);
     }
     bool checkMTK_path(){
         return access(MTK_path.c_str(), F_OK) == 0;
@@ -397,11 +401,31 @@ public:
             return;
         }
             utils.log("已开启核心绑定");
-            WriteFile(background_cpuset, "0-3");
-            WriteFile(system_background_cpuset, "0-4");
-            WriteFile(foreground_cpuset, "0-7");
+            WriteFile(background_cpuset, "0-2");
+            WriteFile(system_background_cpuset, "0-2");
+            WriteFile(restricted_cpuset, "0-5");
+            WriteFile(foreground_cpuset, "0-3,4-7");
             WriteFile(top_app_cpuset, "0-7");
     }
+    // 在大多数EAS平台上设置schedtune.boost > 0固定大核 
+    // https://github.com/yc9559/uperf
+     void schedtune_boost(){
+        if (!Disable_schedtune_boost) {
+            return;
+        }
+        // 将schedtune置0会降低流畅度 优化功耗表现
+        WriteFile(stune_path + "schedtune.boost", "0");
+        WriteFile(stune_path + "foreground/schedtune.boost", "0");
+        WriteFile(stune_path + "top-app/schedtune.boost", "0");
+        /*
+        Q:这里为什么不关闭I/O和RT的schedtune.boost?
+        A:关闭后流畅度大大降低 我直接跑路
+        */
+       // WriteFile(stune_path + "rt/schedtune.boost", "0");
+       // WriteFile(stune_path + "io/schedtune.boost", "0");
+        WriteFile(stune_path + "background/schedtune.boost", "0");
+        WriteFile(Scheduler_path +"sched_autogroup_enabled", "0");
+     }
     
     void load_balancing() {
         if (!loadbalancing) {
