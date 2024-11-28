@@ -55,7 +55,7 @@ CS调度使用的调速器是schedhorizon walt schedutil<br>
 
 ```ini
    [meta]
-   name = "CS调度配置文件V6.0"
+   name = "CS调度配置文件V7.0"
    author = "CoolApk@MoWei"
    Enable_Feas = false
    Disable_qcom_GpuBoost = false
@@ -66,7 +66,7 @@ CS调度使用的调速器是schedhorizon walt schedutil<br>
    CFS_Scheduler = false
    New_Uclamp_Strategy = false
    Disable_Detailed_Log = false
-
+   Disable_Schedtune_boost = false
 
 ```
 | 字段名   | 数据类型 | 描述                                           |
@@ -83,6 +83,7 @@ CS调度使用的调速器是schedhorizon walt schedutil<br>
 | CFS_Scheduler | bool   | 开启后将优化完全公平调度器的参数 PS:5.15内核不需要开启 |
 | New_Uclamp_Strategy | bool | 开启后将使用新的uclamp策略 PS:ztc最新测试版推荐开启 |
 | Disable_Detailed_Log | bool | 开启后将关闭模式切换时产生的日志 可以节省一部分电量和性能资源消耗 PS:警告 功能 报错日志不会关闭 |
+| Disable_Schedtune_boost | bool | 开启后将对Schedtune进行置零 PS:开启后会降低功耗但是会导致卡顿 |
 ```
 在CS启动时会读取`switchInode`对应路径的文件获取默认性能模式,在日志以如下方式体现：  
 2024-08-11 11:22:37] 更换模式为性能模式
@@ -103,6 +104,7 @@ echo "powersave" > /sdcard/Android/MW_CpuSpeedController/log.txt
   - 负载均衡
   - UFS时钟门开关
   - CPUIDLE优化
+  - Schedtune置零
   - `walt` `schedhorizon` `schedutil`调速器、`core_ctl`、 `EAS` `CFS`调度器优化
 # 致谢 （排名不分前后）
 感谢以下用户对本项目的帮助：  
@@ -114,4 +116,4 @@ echo "powersave" > /sdcard/Android/MW_CpuSpeedController/log.txt
 # 使用的开源项目
 [作者:wme7 项目:INIreader](https://github.com/wme7/INIreader) <br>
 感谢所有用户的测试反馈 这将推进CPU调速器(CS调度)的开发
-### 该文档更新于:2024/11/16 16:33
+### 该文档更新于:2024/11/29 0:10
