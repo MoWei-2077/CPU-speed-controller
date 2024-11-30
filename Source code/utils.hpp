@@ -17,6 +17,7 @@
 #include <vector>
 #include <errno.h>
 #include <thread>
+#include <sys/mount.h>
 #include "INIreader.hpp"
 #include <sys/inotify.h>
 
@@ -60,6 +61,25 @@ public:
         return result;  
     }
     
+    bool FileWrite(const std::string& filePath, const std::string& content1, const std::string& content2) noexcept {
+        int fd = open(filePath.c_str(), O_WRONLY | O_NONBLOCK);
+
+        if (fd < 0) {
+            chmod(filePath.c_str(), 0666);
+            fd = open(filePath.c_str(), O_WRONLY | O_NONBLOCK); 
+        }
+
+         if (fd >= 0) {
+            ssize_t bytesWritten1 = write(fd, content1.data(), content1.size());
+            ssize_t bytesWritten2 = write(fd, content2.data(), content2.size());
+            close(fd);
+            chmod(filePath.c_str(), 0444);
+        
+            return (bytesWritten1 != -1 && bytesWritten2 != -1);
+        }
+        return false;
+    }
+
     size_t popenRead(const char* cmd, char* buf, const size_t maxLen) {
         auto fp = popen(cmd, "r");
         if (!fp) return 0;
@@ -89,6 +109,34 @@ public:
     bool checkschedhorizon() {
         const std::string schedhorizon_path = "/sys/devices/system/cpu/cpufreq/policy0/schedhorizon";
         return access(schedhorizon_path.c_str(), F_OK) == 0;
+    }
+    
+    std::string getTids(const std::string& pid1, const std::string& pid2) { 
+        std::vector<std::string> tids; // 存储所有 TID
+
+        std::vector<std::string> pids = {pid1, pid2};
+
+        for (const auto& pid : pids) {
+            std::string taskPath = std::string("/proc/") + pid + "/task";
+
+            DIR* taskDir = opendir(taskPath.c_str());
+            if (taskDir) {
+                struct dirent* taskEntry;
+                while ((taskEntry = readdir(taskDir)) != nullptr) {
+                    if (taskEntry->d_type == DT_DIR && std::isdigit(taskEntry->d_name[0])) {
+                        tids.emplace_back(taskEntry->d_name); 
+                    }
+                }
+                closedir(taskDir);
+            }
+        }
+
+        std::ostringstream tidStream;
+        for (const auto& tid : tids) {
+            tidStream << tid << '\n'; 
+        }
+
+        return tidStream.str();
     }
 
     void Initschedhorizon() {

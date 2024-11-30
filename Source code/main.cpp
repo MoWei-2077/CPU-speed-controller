@@ -16,7 +16,9 @@ int main() {
     csspeed.core_allocation();
     csspeed.load_balancing();
     csspeed.EAS_Scheduler();
-    csspeed.CFS_Scheduler();    
+    csspeed.CFS_Scheduler();   
+    csspeed.disable_AppLoadBalance();
+    csspeed.affinitySetter(); 
     csspeed.CpuIdle();
     csspeed.config_mode();
     while (true) {

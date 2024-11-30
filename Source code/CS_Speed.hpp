@@ -13,7 +13,8 @@ private:
     bool Cpuidle;
     bool UclampStrategy;
     bool DisableDetailedLog;
-    bool Disable_schedtune_boost;
+    bool Disable_AppLoadBalance;
+    bool AffinitySetter;
     Utils utils;
     Config config;
     INIReader reader;
@@ -25,8 +26,8 @@ private:
     const std::string top_app_cpuset = "/dev/cpuset/top-app/cpus"; // 顶层应用
     const std::string restricted_cpuset = "/dev/cpuset/restricted/cpus"; 
     const std::string top_app_cpuctl = "/dev/cpuctl/top-app/";
+    const std::string cpuset_path = "/dev/cpuset/";
     const std::string foreground_cpuctl = "/dev/cpuctl/foreground/";
-    const std::string stune_path = "/dev/setune/";
     const std::string Scheduler_path = "/proc/sys/kernel/";
     const std::string walt_path = "/proc/sys/walt/";
     const std::string CpuIdle_path = "/sys/devices/system/cpu/cpuidle/"; // CPU idle
@@ -51,7 +52,8 @@ public:
         CFSscheduler = reader.GetBoolean("meta", "CFS_Scheduler", false);
         UclampStrategy = reader.GetBoolean("meta", "New_Uclamp_Strategy", false);
         DisableDetailedLog = reader.GetBoolean("meta", "Disable_Detailed_Log", false);
-        Disable_schedtune_boost = reader.GetBoolean("meta", "Disable_Schedtune_boost", false);
+        Disable_AppLoadBalance = reader.GetBoolean("meta", "Disable_App_Load_Balance", false);
+        AffinitySetter = reader.GetBoolean("meta", "Affinity_Setter", false);
     }
     bool checkMTK_path(){
         return access(MTK_path.c_str(), F_OK) == 0;
@@ -409,24 +411,53 @@ public:
     }
     // 在大多数EAS平台上设置schedtune.boost > 0固定大核 
     // https://github.com/yc9559/uperf
-     void schedtune_boost(){
-        if (!Disable_schedtune_boost) {
+     void disable_AppLoadBalance(){
+        if (!Disable_AppLoadBalance) {
             return;
         }
-        // 将schedtune置0会降低流畅度 优化功耗表现
-        WriteFile(stune_path + "schedtune.boost", "0");
-        WriteFile(stune_path + "foreground/schedtune.boost", "0");
-        WriteFile(stune_path + "top-app/schedtune.boost", "0");
-        /*
-        Q:这里为什么不关闭I/O和RT的schedtune.boost?
-        A:关闭后流畅度大大降低 我直接跑路
-        */
-       // WriteFile(stune_path + "rt/schedtune.boost", "0");
-       // WriteFile(stune_path + "io/schedtune.boost", "0");
-        WriteFile(stune_path + "background/schedtune.boost", "0");
+        // ztc内核不支持 schedtune.boost 就关闭sched_ralex_domian_level得了
+        WriteFile(cpuset_path + "foreground/sched_ralex_domian_level", "0");
+        WriteFile(cpuset_path + "top-app/sched_ralex_domian_level", "0");
+        WriteFile(cpuset_path + "background/sched_ralex_domian_level", "0");
         WriteFile(Scheduler_path +"sched_autogroup_enabled", "0");
      }
+
+    void mount_cpuset(){
+        mkdir("/dev/cpuset/top-app/MoWei", 0666);
+        WriteFile("/dev/cpuset/top-app/MoWei/cpus", "7");
+        WriteFile("/dev/cpuset/top-app/MoWei/mems", "0");
+    }
+
+    void affinitySetter(){
+        if (!AffinitySetter){
+            return;
+        }
+        mount_cpuset();
+         
+        // 下次这里改成遍历/proc/<pid>/cmdline 来获取pid 就不需要使用popen+shell来获取 大概可以提高一点点效率和性能
+        const std::string system_server_pid = "pgrep -f system_server";
+        const std::string system_server_pid_str = utils.exec(system_server_pid);
+        const std::string surfaceflinger_pid = "pgrep -f surfaceflinger";
+        const std::string surfaceflinger_pid_str = utils.exec(surfaceflinger_pid);
+        
+        std::string trimmed_pid_str = system_server_pid_str;
+        std::string surfaceflinger_str = surfaceflinger_pid_str;
     
+        trimmed_pid_str.erase(std::remove(trimmed_pid_str.begin(), trimmed_pid_str.end(), '\n'), trimmed_pid_str.end());
+        surfaceflinger_str.erase(std::remove(surfaceflinger_str.begin(), surfaceflinger_str.end(), '\n'), surfaceflinger_str.end());
+        
+        std::string tids = utils.getTids(trimmed_pid_str, surfaceflinger_str);
+        utils.FileWrite("/dev/cpuset/top-app/MoWei/cgroup.procs", trimmed_pid_str, surfaceflinger_str); // FileWrite函数需要传输两个参数才能进行写入操作
+        WriteFile("/dev/cpuset/top-app/MoWei/tasks", tids.c_str()); // 使用WriteFile就可以了 不需要使用FileWrite 
+        // 在同时写入一个文件时 如果需要写入两个参数 可以使用FileWrite写入器 他会更加高效 不需要像WriteFile打开两次文件 chmod 然后关闭文件 所以高效
+    
+        /*
+          遍历system_server和surfaceflinger的Pid和Tid
+          并将PID写入到/dev/cpuset/top-app/MoWei/cgroup.procs中
+          再将Tid写入到/dev/cpuset/top-app/MoWei/tasks中
+        */
+       
+    }
     void load_balancing() {
         if (!loadbalancing) {
             return;
