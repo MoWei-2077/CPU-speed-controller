@@ -63,22 +63,15 @@ public:
         disable_qcomGpuBoost();
         core_allocation();
         load_balancing();
-        EAS_Scheduler();
         CFS_Scheduler();
-        disable_AppLoadBalance();
         affinitySetter();
         CpuIdle();
     }
     void Thread_Conf() {
         /*
-        创建新的线程 因为附加功能正常来说不会更新 所以就分配给0-2的小核心
+        创建新的线程 因为附加功能正常来说不会更新 所以性能消耗很低
         */
         std::thread getNewConfThread(&CS_Speed::GetNewConf, this);
-        cpu_set_t mask;
-        CPU_ZERO(&mask);
-        CPU_SET(0, &mask);
-        CPU_SET(1, &mask);
-        CPU_SET(2, &mask);
         getNewConfThread.detach();
     }
     void GetNewConf() {
@@ -457,13 +450,6 @@ public:
             WriteFile(foreground_cpuset, "0-3,4-7");
             WriteFile(top_app_cpuset, "0-7");
     }
-     void disable_AppLoadBalance(){
-        utils.log("已关闭APP负载均衡优化");
-        WriteFile(cpuset_path + "foreground/sched_ralex_domian_level", "0");
-        WriteFile(cpuset_path + "top-app/sched_ralex_domian_level", "0");
-        WriteFile(cpuset_path + "background/sched_ralex_domian_level", "0");
-        WriteFile(Scheduler_path +"sched_autogroup_enabled", "0");
-     }
 
     void mount_cpuset(){
         utils.log("创建cpuset成功");
@@ -493,12 +479,14 @@ public:
         std::string tids = utils.getTids(pids);
         WriteFile("/dev/cpuset/top-app/MoWei/cgroup.procs", pids);
         WriteFile("/dev/cpuset/top-app/MoWei/tasks", tids);
+        WriteFile("/dev/cpuctl/top-app/MoWei/cgroup.procs", pids);
+        WriteFile("/dev/cpuctl/top-app/MoWei/tasks", tids);
+        
     }
     void load_balancing() {
         if (!loadbalancing) {
-            disable_AppLoadBalance();
             return;
-        }
+        } 
         utils.log("已开启负载均衡优化");
         WriteFile("/dev/cpuset/sched_relax_domain_level", "1");
         WriteFile("/dev/cpuset/system-background/sched_relax_domain_level", "1");

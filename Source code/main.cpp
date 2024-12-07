@@ -13,6 +13,7 @@ int main() {
     utils.Initschedhorizon();
     csspeed.readAndParseConfig();
     csspeed.AddFunction(); 
+    csspeed.EAS_Scheduler();
     csspeed.config_mode();
     csspeed.Thread_Conf();
     while (true) {
