@@ -13,12 +13,11 @@ private:
     bool Cpuidle;
     bool UclampStrategy;
     bool DisableDetailedLog;
-    bool Disable_AppLoadBalance;
     bool AffinitySetter;
+    bool permgr_Feas;
     Utils utils;
     Config config;
     INIReader reader;
-    std::vector<std::thread> threads;
     const std::string schedhorizon_path = "/sys/devices/system/cpu/cpufreq/policy0/schedhorizon/";
     const std::string background_cpuset = "/dev/cpuset/background/cpus"; // 用户的后台应用
     const std::string system_background_cpuset = "/dev/cpuset/system-background/cpus"; // 系统的后台应用
@@ -32,6 +31,9 @@ private:
     const std::string walt_path = "/proc/sys/walt/";
     const std::string CpuIdle_path = "/sys/devices/system/cpu/cpuidle/"; // CPU idle
     const std::string MTK_path = "/data/adb/modules/MW_CpuSpeedController/MTKPhone";
+    using MemberFunctionPtr = void (CS_Speed::*)();
+    MemberFunctionPtr function_map[4] = { &CS_Speed::powersave, &CS_Speed::balance, &CS_Speed::performance, &CS_Speed::fast };
+    static constexpr std::string_view function_names[4] = { "powersave", "balance", "performance", "fast" };
 public:
     CS_Speed() : reader("/sdcard/Android/MW_CpuSpeedController/config.ini") {}
     void readAndParseConfig() {
@@ -52,25 +54,54 @@ public:
         CFSscheduler = reader.GetBoolean("meta", "CFS_Scheduler", false);
         UclampStrategy = reader.GetBoolean("meta", "New_Uclamp_Strategy", false);
         DisableDetailedLog = reader.GetBoolean("meta", "Disable_Detailed_Log", false);
-        Disable_AppLoadBalance = reader.GetBoolean("meta", "Disable_App_Load_Balance", false);
         AffinitySetter = reader.GetBoolean("meta", "Affinity_Setter", false);
     }
     bool checkMTK_path(){
         return access(MTK_path.c_str(), F_OK) == 0;
     }
-
+    void AddFunction() {
+        disable_qcomGpuBoost();
+        core_allocation();
+        load_balancing();
+        EAS_Scheduler();
+        CFS_Scheduler();
+        disable_AppLoadBalance();
+        affinitySetter();
+        CpuIdle();
+    }
+    void Thread_Conf() {
+        /*
+        创建新的线程 因为附加功能正常来说不会更新 所以就分配给0-2的小核心
+        */
+        std::thread getNewConfThread(&CS_Speed::GetNewConf, this);
+        cpu_set_t mask;
+        CPU_ZERO(&mask);
+        CPU_SET(0, &mask);
+        CPU_SET(1, &mask);
+        CPU_SET(2, &mask);
+        getNewConfThread.detach();
+    }
+    void GetNewConf() {
+        while (1){
+            utils.InotifyMain("/sdcard/Android/MW_CpuSpeedController/config.ini", IN_MODIFY); // 配置文件发生变化时
+            readAndParseConfig();
+            utils.log("检测到配置文件发生变化,正在重新加载附加功能");
+            AddFunction();
+        }
+    }
     void config_mode() {
-        std::string line;
+        std::string line_content;
         std::ifstream file = config.Getconfig();
-        while (std::getline(file, line)) {
-            if (line == "powersave") {
-                powersave();
-            } else if (line == "balance") {
-                balance();
-            } else if (line == "performance") {
-                performance();
-            } else if (line == "fast") {
-                fast();
+        while (std::getline(file, line_content)) {
+            callFunction(line_content);
+        }
+    }
+
+    void callFunction(const std::string_view& name) {
+        for (size_t i = 0; i < sizeof(function_names) / sizeof(function_names[0]); ++i) {
+            if (function_names[i] == name) {
+                (this->*function_map[i])();  
+                return;
             }
         }
     }
@@ -237,7 +268,7 @@ public:
     }
     void powersave() {
         if (!DisableDetailedLog){
-            utils.log("省电模式已启用");
+            utils.log("省电模式已启用"); 
         }
         schedhorizon();
 
@@ -398,6 +429,23 @@ public:
         reset();
     }
       
+    void permgr_Feas_Melt(){
+        if (!enableFeas){
+            return;
+        }
+        if (!permgr_Feas){
+            return;
+        }
+        const std::string Permgr_Path = "/proc/permgr/";
+        utils.log("已优化Permgr的参数");
+        /*
+          PS:大饼
+          1.仅限MeltKernel
+          2.如果启用了Feas，再进行第二个判断 决定是否需要优化Permgr的参数
+          3.仅限MeltKernel!!!
+        */
+
+    }
     void core_allocation() {
         if (!coreAllocation) {
             return;
@@ -409,13 +457,8 @@ public:
             WriteFile(foreground_cpuset, "0-3,4-7");
             WriteFile(top_app_cpuset, "0-7");
     }
-    // 在大多数EAS平台上设置schedtune.boost > 0固定大核 
-    // https://github.com/yc9559/uperf
      void disable_AppLoadBalance(){
-        if (!Disable_AppLoadBalance) {
-            return;
-        }
-        // ztc内核不支持 schedtune.boost 就关闭sched_ralex_domian_level得了
+        utils.log("已关闭APP负载均衡优化");
         WriteFile(cpuset_path + "foreground/sched_ralex_domian_level", "0");
         WriteFile(cpuset_path + "top-app/sched_ralex_domian_level", "0");
         WriteFile(cpuset_path + "background/sched_ralex_domian_level", "0");
@@ -423,9 +466,19 @@ public:
      }
 
     void mount_cpuset(){
+        utils.log("创建cpuset成功");
         mkdir("/dev/cpuset/top-app/MoWei", 0666);
-        WriteFile("/dev/cpuset/top-app/MoWei/cpus", "7");
+        WriteFile("/dev/cpuset/top-app/MoWei/cpus", "4-7");
         WriteFile("/dev/cpuset/top-app/MoWei/mems", "0");
+    }
+    void mount_cpuctl(){
+        mkdir("/dev/cpuctl/top-app/MoWei", 0666);
+        if (UclampStrategy)  {
+            WriteFile(top_app_cpuctl + "MoWei/cpu.uclamp.min.multiplier", "0.5");
+        } else{
+            WriteFile(top_app_cpuctl + "MoWei/cpu.uclamp.min", "10");
+            WriteFile(top_app_cpuctl + "MoWei/cpu.uclamp.max", "max");
+        }
     }
 
     void affinitySetter(){
@@ -433,41 +486,25 @@ public:
             return;
         }
         mount_cpuset();
-         
-        // 下次这里改成遍历/proc/<pid>/cmdline 来获取pid 就不需要使用popen+shell来获取 大概可以提高一点点效率和性能
-        const std::string system_server_pid = "pgrep -f system_server";
-        const std::string system_server_pid_str = utils.exec(system_server_pid);
-        const std::string surfaceflinger_pid = "pgrep -f surfaceflinger";
-        const std::string surfaceflinger_pid_str = utils.exec(surfaceflinger_pid);
-        
-        std::string trimmed_pid_str = system_server_pid_str;
-        std::string surfaceflinger_str = surfaceflinger_pid_str;
-    
-        trimmed_pid_str.erase(std::remove(trimmed_pid_str.begin(), trimmed_pid_str.end(), '\n'), trimmed_pid_str.end());
-        surfaceflinger_str.erase(std::remove(surfaceflinger_str.begin(), surfaceflinger_str.end(), '\n'), surfaceflinger_str.end());
-        
-        std::string tids = utils.getTids(trimmed_pid_str, surfaceflinger_str);
-        utils.FileWrite("/dev/cpuset/top-app/MoWei/cgroup.procs", trimmed_pid_str, surfaceflinger_str); // FileWrite函数需要传输两个参数才能进行写入操作
-        WriteFile("/dev/cpuset/top-app/MoWei/tasks", tids.c_str()); // 使用WriteFile就可以了 不需要使用FileWrite 
-        // 在同时写入一个文件时 如果需要写入两个参数 可以使用FileWrite写入器 他会更加高效 不需要像WriteFile打开两次文件 chmod 然后关闭文件 所以高效
-    
-        /*
-          遍历system_server和surfaceflinger的Pid和Tid
-          并将PID写入到/dev/cpuset/top-app/MoWei/cgroup.procs中
-          再将Tid写入到/dev/cpuset/top-app/MoWei/tasks中
-        */
-       
+        mount_cpuctl();
+        // 大饼完善
+        std::vector<std::string> processNames = {"system_server", "surfaceflinger"};
+        std::string pids = utils.getPids(processNames);
+        std::string tids = utils.getTids(pids);
+        WriteFile("/dev/cpuset/top-app/MoWei/cgroup.procs", pids);
+        WriteFile("/dev/cpuset/top-app/MoWei/tasks", tids);
     }
     void load_balancing() {
         if (!loadbalancing) {
+            disable_AppLoadBalance();
             return;
         }
-            utils.log("已开启负载均衡优化");
-            WriteFile("/dev/cpuset/sched_relax_domain_level", "1");
-            WriteFile("/dev/cpuset/system-background/sched_relax_domain_level", "1");
-            WriteFile("/dev/cpuset/background/sched_relax_domain_level", "1");
-            WriteFile("/dev/cpuset/foreground/sched_relax_domain_level", "1");
-            WriteFile("/dev/cpuset/top-app/sched_relax_domain_level", "1");
+        utils.log("已开启负载均衡优化");
+        WriteFile("/dev/cpuset/sched_relax_domain_level", "1");
+        WriteFile("/dev/cpuset/system-background/sched_relax_domain_level", "1");
+        WriteFile("/dev/cpuset/background/sched_relax_domain_level", "1");
+        WriteFile("/dev/cpuset/foreground/sched_relax_domain_level", "1");
+        WriteFile("/dev/cpuset/top-app/sched_relax_domain_level", "1");
     }
 
     void disable_qcomGpuBoost(){

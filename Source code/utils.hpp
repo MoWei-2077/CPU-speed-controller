@@ -6,21 +6,20 @@
 #include <string>
 #include <ctime>
 #include <map>
+#include <functional>
 #include <dirent.h>
 #include <stdio.h>
 #include <fcntl.h>
 #include <unistd.h>
 #include <stdlib.h>
-#include <stdio.h>
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <vector>
 #include <errno.h>
 #include <thread>
+#include <sys/inotify.h>
 #include <sys/mount.h>
 #include "INIreader.hpp"
-#include <sys/inotify.h>
-
 class Utils {
 private:
     const std::string logpath = "/sdcard/Android/MW_CpuSpeedController/log.txt";
@@ -105,38 +104,80 @@ public:
             exit(-2);
         }
     }
+    size_t readString(const char* path, char* buff, const size_t maxLen) {
+        auto fd = open(path, O_RDONLY);
+        if (fd <= 0) {
+            buff[0] = 0;
+            return 0;
+        }
+        ssize_t len = read(fd, buff, maxLen);
+        close(fd);
+        if (len <= 0) {
+            buff[0] = 0;
+            return 0;
+        }
+        buff[len] = 0; // 终止符
+        return static_cast<size_t>(len);
+    }
     
     bool checkschedhorizon() {
         const std::string schedhorizon_path = "/sys/devices/system/cpu/cpufreq/policy0/schedhorizon";
         return access(schedhorizon_path.c_str(), F_OK) == 0;
     }
     
-    std::string getTids(const std::string& pid1, const std::string& pid2) { 
-        std::vector<std::string> tids; // 存储所有 TID
+    std::string getPids(const std::vector<std::string>& processNames) {
+        DIR* dir = opendir("/proc");
+        if (dir == nullptr) {
+            log("错误:无法打开/proc 目录");
+            return "";
+        }
 
-        std::vector<std::string> pids = {pid1, pid2};
+        std::ostringstream Pids;
+        struct dirent* entry;
+        while ((entry = readdir(dir)) != nullptr) {
+            if (entry->d_type == DT_DIR && std::all_of(entry->d_name, entry->d_name + strlen(entry->d_name), ::isdigit)) {
+                pid_t pid = static_cast<pid_t>(std::stoi(entry->d_name));
+                std::string cmdlinePath = "/proc/" + std::string(entry->d_name) + "/cmdline";
 
-        for (const auto& pid : pids) {
-            std::string taskPath = std::string("/proc/") + pid + "/task";
-
-            DIR* taskDir = opendir(taskPath.c_str());
-            if (taskDir) {
-                struct dirent* taskEntry;
-                while ((taskEntry = readdir(taskDir)) != nullptr) {
-                    if (taskEntry->d_type == DT_DIR && std::isdigit(taskEntry->d_name[0])) {
-                        tids.emplace_back(taskEntry->d_name); 
+                std::ifstream cmdlineFile(cmdlinePath);
+                if (cmdlineFile) {
+                    std::string cmdline;
+                    std::getline(cmdlineFile, cmdline, '\0'); 
+                    for (const auto& processName : processNames) {
+                        if (cmdline.find(processName) != std::string::npos) {
+                            Pids << pid << '\n';
+                            break; 
+                        }
                     }
                 }
-                closedir(taskDir);
             }
         }
+        closedir(dir);
+        return Pids.str();
+    }
 
-        std::ostringstream tidStream;
-        for (const auto& tid : tids) {
-            tidStream << tid << '\n'; 
+    std::string getTids(const std::string& pids) {
+        std::ostringstream Tids;
+        std::istringstream iss(pids);
+        std::string pid;
+
+        while (std::getline(iss, pid, '\n')) {
+            std::string taskDir = "/proc/" + pid + "/task";
+            DIR* dir = opendir(taskDir.c_str());
+            if (dir == nullptr) {
+                log("错误:无法打开/proc/" + pid + "/task 目录");
+                return "";
+            }
+
+            struct dirent* entry;
+            while ((entry = readdir(dir)) != nullptr) {
+                if (entry->d_type == DT_DIR && std::all_of(entry->d_name, entry->d_name + strlen(entry->d_name), ::isdigit)) {
+                    Tids << entry->d_name << '\n';
+                }
+            }
+            closedir(dir);
         }
-
-        return tidStream.str();
+        return Tids.str();
     }
 
     void Initschedhorizon() {
